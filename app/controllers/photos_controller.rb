@@ -1,209 +1,245 @@
 class PhotosController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_photo, only: [:show, :edit, :update, :destroy, :approve]
+  before_action :set_photo, only: %i[show edit update destroy approve]
+  before_action :set_students_for_forms, only: %i[new create edit update]
+  before_action :set_filters, only: %i[index gallery]
 
+  # GET /photos
   def index
-    # Get photos based on user role and permissions
-    @photos = Photo.accessible_by(current_user)
-                  .includes(:student, :uploaded_by, :classroom)
-                  .order(created_at: :desc)
+    @photos =
+      Photo.accessible_by(current_user)
+           .includes(:student, :uploaded_by, :classroom, image_attachment: :blob)
+           .order(created_at: :desc)
 
-    # Set accessible students for the filter dropdown
-    @accessible_students = get_accessible_students
+    @photos = apply_filters(@photos)
 
-    # Filter by student if specified
-    if params[:student_id].present?
-      student = Student.find(params[:student_id])
-      @photos = @photos.by_student(student) if can_view_student_photos?(student)
-    end
-
-    # Filter by classroom if specified
-    if params[:classroom_id].present?
-      classroom = Classroom.find(params[:classroom_id])
-      @photos = @photos.by_classroom(classroom) if can_view_classroom_photos?(classroom)
-    end
-
-    # Filter by date range if specified
-    if params[:start_date].present? && params[:end_date].present?
-      start_date = Date.parse(params[:start_date])
-      end_date = Date.parse(params[:end_date]).end_of_day
-      @photos = @photos.where(created_at: start_date..end_date)
-    end
-
-    # Filter by category if specified
-    if params[:category].present?
-      @photos = @photos.where(category: params[:category])
-    end
-
-    # Pagination
-    @photos = @photos.page(params[:page]).per(20)
+    # Pagination (only if your paginator exists)
+    @photos = @photos.page(params[:page]).per(20) if @photos.respond_to?(:page)
   end
 
+  # GET /photos/gallery
+  def gallery
+    @photos =
+      Photo.accessible_by(current_user)
+           .where(approved: true)
+           .includes(:student, :uploaded_by, image_attachment: :blob)
+           .order(created_at: :desc)
+
+    @photos = apply_filters(@photos)
+
+    @photos = @photos.page(params[:page]).per(12) if @photos.respond_to?(:page)
+  end
+
+  # GET /photos/:id
   def show
-    # Check if user has permission to view this photo
     unless @photo.accessible_by?(current_user)
       redirect_to photos_path, alert: "You don't have permission to view this photo."
       return
     end
-
-    # Render the show template
   end
 
+  # GET /photos/new
   def new
+    unless can_upload_photos?
+      redirect_to photos_path, alert: "You don't have permission to upload photos."
+      return
+    end
+
     @photo = Photo.new
-    @students = get_accessible_students
   end
 
+  # POST /photos
   def create
+    unless can_upload_photos?
+      redirect_to photos_path, alert: "You don't have permission to upload photos."
+      return
+    end
+
     @photo = Photo.new(photo_params)
     @photo.uploaded_by = current_user
 
     if @photo.save
-      # Send notification to parents if photo is visible to them
-      if @photo.visible_to_parents?
-        parents = @photo.student.all_parents
-        parents.each do |parent|
-          NotificationService.send_notification(
-            recipient: parent,
-            title: "New Photo of #{@photo.student.first_name}",
-            message: "A new photo titled '#{@photo.title}' has been added to #{@photo.student.first_name}'s gallery.",
-            notification_type: 'event',
-            sender: current_user,
-            link: photo_path(@photo)
-          )
-        end
-      end
-
-      redirect_to @photo, notice: 'Photo was successfully uploaded.'
+      notify_parents_if_needed(@photo)
+      redirect_to @photo, notice: "Photo was successfully uploaded."
     else
-      @students = get_accessible_students
-      render :new
+      render :new, status: :unprocessable_entity
     end
   end
 
+  # GET /photos/:id/edit
   def edit
-    # Only allow editing if user uploaded the photo or is admin
     unless can_edit_photo?(@photo)
       redirect_to photos_path, alert: "You don't have permission to edit this photo."
       return
     end
-
-    @students = get_accessible_students
   end
 
+  # PATCH/PUT /photos/:id
   def update
-    # Only allow updating if user uploaded the photo or is admin
     unless can_edit_photo?(@photo)
       redirect_to photos_path, alert: "You don't have permission to update this photo."
       return
     end
 
     if @photo.update(photo_params)
-      redirect_to @photo, notice: 'Photo was successfully updated.'
+      redirect_to @photo, notice: "Photo was successfully updated."
     else
-      @students = get_accessible_students
-      render :edit
+      render :edit, status: :unprocessable_entity
     end
   end
 
+  # DELETE /photos/:id
   def destroy
-    # Only allow deleting if user uploaded the photo or is admin
     unless can_edit_photo?(@photo)
       redirect_to photos_path, alert: "You don't have permission to delete this photo."
       return
     end
 
     @photo.destroy
-    redirect_to photos_path, notice: 'Photo was successfully deleted.'
+    redirect_to photos_path, notice: "Photo was successfully deleted."
   end
 
+  # PATCH /photos/:id/approve
   def approve
-    # Only admins and teachers can approve photos
     unless current_user.admin? || current_user.teacher?
       redirect_to photos_path, alert: "You don't have permission to approve photos."
       return
     end
 
     @photo.update(approved: true)
-    redirect_to @photo, notice: 'Photo approved successfully.'
-  end
-
-  def gallery
-    # Gallery view showing photos in a grid layout
-    @photos = Photo.accessible_by(current_user)
-                  .where(approved: true)
-                  .includes(:student, :uploaded_by)
-                  .order(created_at: :desc)
-    
-    # Filter by student if specified
-    if params[:student_id].present?
-      student = Student.find(params[:student_id])
-      @photos = @photos.by_student(student) if can_view_student_photos?(student)
-    end
-    
-    # Filter by classroom if specified
-    if params[:classroom_id].present?
-      classroom = Classroom.find(params[:classroom_id])
-      @photos = @photos.by_classroom(classroom) if can_view_classroom_photos?(classroom)
-    end
-    
-    # Pagination
-    @photos = @photos.page(params[:page]).per(12) # 12 photos per page for gallery view
+    redirect_to @photo, notice: "Photo approved successfully."
   end
 
   private
 
   def set_photo
     @photo = Photo.find(params[:id])
+  rescue ActiveRecord::RecordNotFound
+    redirect_to photos_path, alert: "Photo not found."
+    @photo = nil
+  end
+
+  def set_students_for_forms
+    @students = accessible_students.order(:first_name, :last_name)
+  end
+
+  def set_filters
+    @accessible_students = accessible_students.order(:first_name, :last_name)
+    @accessible_classrooms = accessible_classrooms.order(:name)
   end
 
   def photo_params
-    params.require(:photo).permit(:student_id, :classroom_id, :title, :description, :category, :visible_to_parents, :image, :taken_at)
+    # supports either `:image` (single) or `:images` if you later add multi
+    params.require(:photo).permit(
+      :student_id, :classroom_id, :title, :description, :category,
+      :visible_to_parents, :image, :taken_at
+    )
   end
 
-  def get_accessible_students
+  # ------- Filtering (safe + permission-aware) -------
+
+  def apply_filters(scope)
+    scope = filter_by_student(scope)
+    scope = filter_by_classroom(scope)
+    scope = filter_by_category(scope)
+    scope = filter_by_date_range(scope)
+    scope
+  end
+
+  def filter_by_student(scope)
+    return scope unless params[:student_id].present?
+
+    student = accessible_students.find_by(id: params[:student_id])
+    return scope unless student
+
+    scope.by_student(student)
+  end
+
+  def filter_by_classroom(scope)
+    return scope unless params[:classroom_id].present?
+
+    classroom = accessible_classrooms.find_by(id: params[:classroom_id])
+    return scope unless classroom
+
+    scope.by_classroom(classroom)
+  end
+
+  def filter_by_category(scope)
+    return scope unless params[:category].present?
+
+    scope.where(category: params[:category])
+  end
+
+  def filter_by_date_range(scope)
+    return scope unless params[:start_date].present? && params[:end_date].present?
+
+    begin
+      start_date = Date.parse(params[:start_date])
+      end_date = Date.parse(params[:end_date]).end_of_day
+      scope.where(created_at: start_date..end_date)
+    rescue ArgumentError
+      scope
+    end
+  end
+
+  # ------- Access rules (centralized) -------
+
+  def can_upload_photos?
+    current_user.admin? || current_user.teacher?
+  end
+
+  def can_edit_photo?(photo)
+    current_user.admin? || photo.uploaded_by == current_user
+  end
+
+  def accessible_students
     case current_user.role
-    when 'admin'
+    when "admin"
       Student.all
-    when 'teacher'
-      # Teachers can access students in their classrooms
+    when "teacher"
       Student.joins(:classroom).where(classrooms: { teacher_id: current_user.id })
-    when 'parent'
-      # Parents can only access their own children
+    when "parent"
       current_user.students_as_parent
     else
       Student.none
     end
   end
 
-  def can_view_student_photos?(student)
+  def accessible_classrooms
     case current_user.role
-    when 'admin'
-      true
-    when 'teacher'
-      student.classroom&.teacher == current_user
-    when 'parent'
-      current_user.students_as_parent.include?(student)
+    when "admin"
+      Classroom.all
+    when "teacher"
+      current_user.classrooms_taught
+    when "parent"
+      # classrooms that contain any of my children
+      Classroom.joins(:students).where(students: { id: current_user.students_as_parent.select(:id) }).distinct
     else
-      false
+      Classroom.none
     end
   end
 
-  def can_view_classroom_photos?(classroom)
-    case current_user.role
-    when 'admin'
-      true
-    when 'teacher'
-      classroom.teacher == current_user
-    when 'parent'
-      classroom.students.joins(:parent_student_relationships)
-                       .where(parent_student_relationships: { parent_id: current_user.id }).exists?
-    else
-      false
-    end
-  end
+  # ------- Notifications -------
 
-  def can_edit_photo?(photo)
-    current_user.admin? || photo.uploaded_by == current_user
+  def notify_parents_if_needed(photo)
+    return unless photo.visible_to_parents?
+    return unless photo.student
+
+    parents = photo.student.all_parents
+    return if parents.blank?
+
+    parents.each do |parent|
+      NotificationService.send_notification(
+        recipient: parent,
+        title: "New Photo of #{photo.student.first_name}",
+        message: "A new photo titled '#{photo.title}' has been added to #{photo.student.first_name}'s gallery.",
+        notification_type: "event", # keep your current type unless you add "photo"
+        sender: current_user,
+        link: photo_path(photo)
+      )
+    end
+  rescue StandardError
+    # don’t break upload due to notification failures
+    nil
   end
 end

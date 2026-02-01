@@ -1,16 +1,19 @@
 <% content_for :title, "Students" %>
 
-<div class="d-flex justify-between items-center mb-6">
+<div class="page-header">
   <div>
-    <h1 class="text-2xl font-bold">Students</h1>
-    <p class="text-sm text-gray-500 mt-1">Manage all student records</p>
+    <h1 class="page-header__title">Students</h1>
+    <p class="page-header__subtitle">Manage all student records</p>
   </div>
-  <%= link_to "New Student", new_student_path, class: "btn btn-primary" %>
+
+  <div class="page-actions">
+    <%= link_to "New Student", new_student_path, class: "btn btn-primary" %>
+  </div>
 </div>
 
 <div class="card">
   <div class="table-container">
-    <table class="table" id="students-table">
+    <table class="table">
       <thead>
         <tr>
           <th>ID</th>
@@ -22,18 +25,47 @@
           <th class="no-sort">Actions</th>
         </tr>
       </thead>
+
       <tbody>
+        <% @students.each do |student| %>
+          <tr>
+            <td><%= student.id %></td>
+            <td><%= student.full_name %></td>
+            <td><%= student.classroom&.name || "Unassigned" %></td>
+            <td>
+              <span class="status-badge status-<%= student.status %>">
+                <%= student.status.humanize %>
+              </span>
+            </td>
+            <td><%= student.gender.present? ? student.gender.humanize : "—" %></td>
+            <td><%= student.enrollment_date&.strftime("%b %d, %Y") || "—" %></td>
+            <td>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <%= link_to "View", student, class: "btn btn-sm" %>
+
+                <% if current_user.admin? || (current_user.teacher? && current_user.classrooms_taught.include?(student.classroom)) %>
+                  <%= link_to "Edit", edit_student_path(student), class: "btn btn-sm" %>
+                <% end %>
+
+                <% if current_user.admin? %>
+                  <%= link_to "Delete", student,
+                        method: :delete,
+                        data: { confirm: "Are you sure?" },
+                        class: "btn btn-ghost btn-sm" %>
+                <% end %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
       </tbody>
     </table>
   </div>
-</div>
 
-<script>
-  $(document).ready(function() {
-    $('#students-table').DataTable({
-      "processing": true,
-      "serverSide": true,
-      "ajax": "<%= students_path(format: :json) %>"
-    });
-  });
-</script>
+  <% if @students.empty? %>
+    <div style="text-align:center; padding: 18px;">
+      <div class="form-help" style="margin:0;">
+        No students found for your account.
+      </div>
+    </div>
+  <% end %>
+</div>

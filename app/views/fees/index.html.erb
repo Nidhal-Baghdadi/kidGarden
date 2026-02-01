@@ -1,21 +1,21 @@
 <% content_for :title, "Fees" %>
 
-<div class="d-flex justify-between items-center mb-4">
-  <h1>Fee Records</h1>
-  <%= link_to "New Fee", new_fee_path, class: "btn btn-primary" %>
+<div class="page-header">
+  <div>
+    <h1 class="page-header__title">Fees</h1>
+    <p class="page-header__subtitle">Manage tuition and fee records.</p>
+  </div>
+
+  <div class="page-actions">
+    <% if current_user.admin? || current_user.teacher? %>
+      <%= link_to "New Fee", new_fee_path, class: "btn btn-primary" %>
+    <% end %>
+  </div>
 </div>
 
 <div class="card">
-  <div class="table-header">
-    <div class="table-actions">
-      <input type="text"
-             class="search-box"
-             data-table-target="search"
-             placeholder="Search fees...">
-    </div>
-  </div>
   <div class="table-container">
-    <table class="table" id="fees-table">
+    <table class="table">
       <thead>
         <tr>
           <th>ID</th>
@@ -28,17 +28,48 @@
         </tr>
       </thead>
       <tbody>
+        <% @fees.each do |fee| %>
+          <tr>
+            <td><%= fee.id %></td>
+            <td><%= fee.student&.full_name || "—" %></td>
+            <td><%= number_to_currency(fee.amount || 0) %></td>
+            <td><%= fee.due_date&.strftime("%B %d, %Y") || "—" %></td>
+            <td>
+              <% if fee.status.present? %>
+                <span class="status-badge status-<%= fee.status %>"><%= fee.status.humanize %></span>
+              <% else %>
+                —
+              <% end %>
+            </td>
+            <td><%= fee.receipt_number.presence || "—" %></td>
+            <td>
+              <%= link_to "View", fee, class: "btn btn-sm" %>
+
+              <% if current_user.admin? || current_user.teacher? %>
+                <%= link_to "Edit", edit_fee_path(fee), class: "btn btn-ghost btn-sm" %>
+              <% end %>
+
+              <% if current_user.admin? %>
+                <%= link_to "Delete", fee,
+                      method: :delete,
+                      data: { confirm: "Delete this fee record?" },
+                      class: "btn btn-ghost btn-sm" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
       </tbody>
     </table>
   </div>
-</div>
 
-<script>
-  $(document).ready(function() {
-    $('#fees-table').DataTable({
-      "processing": true,
-      "serverSide": true,
-      "ajax": "<%= fees_path(format: :json) %>"
-    });
-  });
-</script>
+  <% if @fees.empty? %>
+    <div style="padding:18px;">
+      <div class="form-help">No fee records found.</div>
+      <% if current_user.admin? || current_user.teacher? %>
+        <div style="margin-top:12px;">
+          <%= link_to "Create Fee", new_fee_path, class: "btn btn-primary" %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>

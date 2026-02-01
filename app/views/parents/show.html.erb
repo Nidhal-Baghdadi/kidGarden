@@ -1,64 +1,73 @@
 <% content_for :title, @parent.name %>
 
-<div class="d-flex justify-between items-center mb-4">
-  <h1><%= @parent.name %></h1>
-  <div class="flex space-x-2">
+<div class="page-header">
+  <div>
+    <h1 class="page-header__title"><%= @parent.name %></h1>
+    <p class="page-header__subtitle">Parent profile and linked children.</p>
+  </div>
+
+  <div class="page-actions">
     <% if current_user.admin? %>
-      <%= link_to "Edit", edit_parent_path(@parent), class: "btn btn-outline" %>
-      <%= link_to "Delete", @parent, method: :delete, class: "btn btn-danger",
-                  confirm: "Are you sure?", style: "margin-left: 0.25rem;" %>
+      <%= link_to "Edit", edit_parent_path(@parent), class: "btn" %>
+      <%= link_to "Delete", @parent,
+          method: :delete,
+          data: { confirm: "Are you sure?" },
+          class: "btn btn-ghost" %>
     <% end %>
-    <%= link_to "Back to Parents", parents_path, class: "btn btn-outline ml-2" %>
+
+    <%= link_to "Back to Parents", parents_path, class: "btn btn-ghost" %>
   </div>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-  <div class="card md:col-span-1">
-    <h3>Parent Information</h3>
-    <div class="space-y-3">
-      <div>
-        <label class="text-sm font-medium text-gray-500">Name</label>
-        <p class="text-lg font-semibold"><%= @parent.name %></p>
-      </div>
-      <div>
-        <label class="text-sm font-medium text-gray-500">Email</label>
-        <p><%= @parent.email %></p>
-      </div>
-      <div>
-        <label class="text-sm font-medium text-gray-500">Phone</label>
-        <p><%= @parent.phone || "N/A" %></p>
-      </div>
-      <div>
-        <label class="text-sm font-medium text-gray-500">Address</label>
-        <p><%= @parent.address || "N/A" %></p>
-      </div>
-      <div>
-        <label class="text-sm font-medium text-gray-500">Joined</label>
-        <p><%= @parent.created_at.strftime("%B %d, %Y") %></p>
-      </div>
+<div class="form-grid">
+  <div class="card">
+    <h3 style="margin:0 0 12px 0;">Parent Information</h3>
+
+    <div class="form-group">
+      <div class="form-label">Name</div>
+      <div class="readonly"><%= @parent.name %></div>
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">Email</div>
+      <div class="readonly"><%= @parent.email %></div>
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">Phone</div>
+      <div class="readonly"><%= @parent.phone.presence || "—" %></div>
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">Address</div>
+      <div class="readonly"><%= @parent.address.presence || "—" %></div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:0;">
+      <div class="form-label">Joined</div>
+      <div class="readonly"><%= @parent.created_at.strftime("%B %d, %Y") %></div>
     </div>
   </div>
 
-  <div class="card md:col-span-2">
-    <h3>Children</h3>
+  <div class="card" style="grid-column: span 1 / span 1;">
+    <h3 style="margin:0 0 12px 0;">Children</h3>
+
     <% if @parent.students_as_parent.any? %>
-      <div class="table-responsive">
+      <div class="table-container">
         <table class="table">
           <thead>
             <tr>
-              <th>Student Name</th>
+              <th>Student</th>
               <th>Classroom</th>
               <th>Age</th>
               <th>Status</th>
-              <th>Actions</th>
+              <th class="no-sort">Actions</th>
             </tr>
           </thead>
           <tbody>
             <% @parent.students_as_parent.each do |student| %>
               <tr>
-                <td>
-                  <div class="font-medium"><%= student.first_name %> <%= student.last_name %></div>
-                </td>
+                <td><%= student.first_name %> <%= student.last_name %></td>
                 <td><%= student.classroom&.name || "Unassigned" %></td>
                 <td><%= student.age %></td>
                 <td>
@@ -67,7 +76,7 @@
                   </span>
                 </td>
                 <td>
-                  <%= link_to "View", student, class: "btn btn-outline btn-sm" %>
+                  <%= link_to "View", student, class: "btn btn-sm" %>
                 </td>
               </tr>
             <% end %>
@@ -75,13 +84,13 @@
         </table>
       </div>
     <% else %>
-      <p>No children assigned to this parent.</p>
+      <div class="form-help">No children assigned to this parent.</div>
     <% end %>
   </div>
 </div>
 
-<div class="card mt-6">
-  <h3>Recent Activity</h3>
-  <p>Recent communications and interactions with this parent.</p>
+<div class="card" style="margin-top: 14px;">
+  <h3 style="margin:0 0 6px 0;">Recent Activity</h3>
+  <p class="form-help" style="margin:0;">Recent communications and interactions with this parent.</p>
   <!-- Add recent activity logs here -->
 </div>

@@ -1,23 +1,35 @@
 <% content_for :title, "New Message" %>
 
-<div class="d-flex justify-between items-center mb-4">
-  <h1>New Message</h1>
-  <%= link_to "Back to Messages", user_conversations_path, class: "btn btn-outline" %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-header__title">New Message</h1>
+    <p class="page-header__subtitle">Pick someone you’re allowed to contact.</p>
+  </div>
+
+  <div class="page-actions">
+    <%= link_to "Back", user_conversations_path, class: "btn" %>
+  </div>
 </div>
 
 <div class="card">
-  <%= form_with url: start_the_conversation_path, method: :post, local: true, class: "form" do |form| %>
+  <%= form_with url: start_the_conversation_path, method: :post, local: true do |form| %>
     <div class="form-group">
       <%= form.label :recipient_id, "Recipient", class: "form-label" %>
-      <%= form.select :recipient_id, 
-                      options_from_collection_for_select(@recipients, :id, :name), 
-                      { prompt: "Select Recipient" }, 
-                      { class: "form-control" } %>
+      <%= form.select :recipient_id,
+            options_from_collection_for_select(@recipients, :id, :name),
+            { prompt: "Select recipient" },
+            { class: "form-control" } %>
+
+      <div class="form-help" style="margin-top:6px;">
+        You’ll be taken directly to the conversation after it’s created.
+      </div>
     </div>
 
-    <div class="d-flex justify-between mt-4">
+    <div class="page-actions" style="justify-content:flex-end; margin-top:14px;">
+      <%= link_to "Cancel", user_conversations_path, class: "btn" %>
       <%= form.submit "Start Conversation", class: "btn btn-primary" %>
-      <%= link_to "Cancel", user_conversations_path, class: "btn btn-outline" %>
     </div>
   <% end %>
 </div>
+

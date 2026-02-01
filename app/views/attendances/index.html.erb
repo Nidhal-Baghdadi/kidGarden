@@ -1,13 +1,21 @@
 <% content_for :title, "Attendance" %>
 
-<div class="d-flex justify-between items-center mb-4">
-  <h1>Attendance Records</h1>
-  <%= link_to "New Attendance", new_attendance_path, class: "btn btn-primary" %>
+<div class="page-header">
+  <div>
+    <h1 class="page-header__title">Attendance</h1>
+    <p class="page-header__subtitle">Track daily attendance records.</p>
+  </div>
+
+  <div class="page-actions">
+    <% if current_user.admin? || current_user.teacher? || current_user.staff? %>
+      <%= link_to "New Attendance", new_attendance_path, class: "btn btn-primary" %>
+    <% end %>
+  </div>
 </div>
 
 <div class="card">
   <div class="table-container">
-    <table class="table" id="attendances-table">
+    <table class="table">
       <thead>
         <tr>
           <th>ID</th>
@@ -20,17 +28,48 @@
         </tr>
       </thead>
       <tbody>
+        <% @attendances.each do |attendance| %>
+          <tr>
+            <td><%= attendance.id %></td>
+            <td><%= attendance.student&.full_name || "—" %></td>
+            <td><%= attendance.date&.strftime("%B %d, %Y") || "—" %></td>
+            <td>
+              <% if attendance.status.present? %>
+                <span class="status-badge status-<%= attendance.status %>"><%= attendance.status.humanize %></span>
+              <% else %>
+                —
+              <% end %>
+            </td>
+            <td><%= attendance.notes.presence || "—" %></td>
+            <td><%= attendance.staff&.name || "System" %></td>
+            <td>
+              <%= link_to "View", attendance, class: "btn btn-sm" %>
+
+              <% if current_user.admin? || current_user.teacher? || current_user.staff? %>
+                <%= link_to "Edit", edit_attendance_path(attendance), class: "btn btn-ghost btn-sm" %>
+              <% end %>
+
+              <% if current_user.admin? || current_user.teacher? || current_user.staff? %>
+                <%= link_to "Delete", attendance,
+                      method: :delete,
+                      data: { confirm: "Delete this attendance record?" },
+                      class: "btn btn-ghost btn-sm" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
       </tbody>
     </table>
   </div>
-</div>
 
-<script>
-  $(document).ready(function() {
-    $('#attendances-table').DataTable({
-      "processing": true,
-      "serverSide": true,
-      "ajax": "<%= attendances_path(format: :json) %>"
-    });
-  });
-</script>
+  <% if @attendances.empty? %>
+    <div style="padding:18px;">
+      <div class="form-help">No attendance records found.</div>
+      <% if current_user.admin? || current_user.teacher? || current_user.staff? %>
+        <div style="margin-top:12px;">
+          <%= link_to "Record Attendance", new_attendance_path, class: "btn btn-primary" %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>

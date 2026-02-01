@@ -1,25 +1,31 @@
 <% content_for :title, "Edit Resource" %>
 
-<div class="d-flex justify-between items-center mb-4">
-  <h1>Edit Resource</h1>
-  <%= link_to "Show", @resource, class: "btn btn-outline" %>
-  <%= link_to "Back to Resources", resources_path, class: "btn btn-outline", style: "margin-left: 0.5rem;" %>
+<div class="page-header">
+  <div>
+    <h1 class="page-header__title">Edit Resource</h1>
+    <p class="page-header__subtitle"><%= @resource.title %></p>
+  </div>
+
+  <div class="page-actions">
+    <%= link_to "View", @resource, class: "btn" %>
+    <%= link_to "Back", resources_path, class: "btn btn-ghost" %>
+  </div>
 </div>
 
 <div class="card">
-  <%= form_with model: @resource, local: true, class: "form" do |form| %>
-    <% if @resource.errors.any? %>
-      <div class="alert alert-error">
-        <h4><%= pluralize(@resource.errors.count, "error") %> prohibited this resource from being saved:</h4>
-        <ul>
-          <% @resource.errors.full_messages.each do |message| %>
-            <li><%= message %></li>
-          <% end %>
-        </ul>
-      </div>
-    <% end %>
+  <% if @resource.errors.any? %>
+    <div class="alert alert--error">
+      <strong><%= pluralize(@resource.errors.count, "error") %> prevented saving:</strong>
+      <ul style="margin:8px 0 0 18px;">
+        <% @resource.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
 
-    <div class="grid grid-cols-2">
+  <%= form_with model: @resource, local: true do |form| %>
+    <div class="form-grid">
       <div class="form-group">
         <%= form.label :title, class: "form-label" %>
         <%= form.text_field :title, class: "form-control" %>
@@ -27,7 +33,10 @@
 
       <div class="form-group">
         <%= form.label :category, class: "form-label" %>
-        <%= form.select :category, ['worksheet', 'presentation', 'video', 'audio', 'document', 'other'], { selected: @resource.category }, { class: "form-control" } %>
+        <%= form.select :category,
+          ['worksheet', 'presentation', 'video', 'audio', 'document', 'other'].map { |v| [v.humanize, v] },
+          { prompt: "Select category" },
+          { class: "form-control" } %>
       </div>
 
       <div class="form-group">
@@ -37,7 +46,10 @@
 
       <div class="form-group">
         <%= form.label :classroom_id, "Classroom (optional)", class: "form-label" %>
-        <%= form.select :classroom_id, Classroom.all.map { |c| [c.name, c.id] }, { selected: @resource.classroom_id, prompt: "All Classrooms" }, { class: "form-control" } %>
+        <%= form.select :classroom_id,
+          Classroom.order(:name).map { |c| [c.name, c.id] },
+          { prompt: "All Classrooms" },
+          { class: "form-control" } %>
       </div>
     </div>
 
@@ -47,16 +59,19 @@
     </div>
 
     <div class="form-group">
-      <%= form.label :file, "Resource File (optional - leave blank to keep existing)", class: "form-label" %>
+      <%= form.label :file, "Replace file (optional)", class: "form-label" %>
       <%= form.file_field :file, class: "form-control" %>
+
       <% if @resource.file.attached? %>
-        <p class="mt-1">Current file: <%= @resource.file.filename %></p>
+        <div class="form-help" style="margin-top:8px;">
+          Current file: <strong><%= @resource.file.filename %></strong>
+        </div>
       <% end %>
     </div>
 
-    <div class="d-flex justify-between mt-4">
-      <%= form.submit "Update Resource", class: "btn btn-primary" %>
-      <%= link_to "Cancel", resources_path, class: "btn btn-outline" %>
+    <div class="page-actions" style="justify-content:flex-end; margin-top:14px;">
+      <%= link_to "Cancel", resources_path, class: "btn" %>
+      <%= form.submit "Save changes", class: "btn btn-primary" %>
     </div>
   <% end %>
 </div>

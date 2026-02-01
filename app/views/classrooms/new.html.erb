@@ -1,24 +1,30 @@
 <% content_for :title, "New Classroom" %>
 
-<div class="d-flex justify-between items-center mb-4">
-  <h1>Add New Classroom</h1>
-  <%= link_to "Back to Classrooms", classrooms_path, class: "btn btn-outline" %>
+<div class="page-header">
+  <div>
+    <h1 class="page-header__title">Add Classroom</h1>
+    <p class="page-header__subtitle">Create a new classroom and assign a teacher.</p>
+  </div>
+
+  <div class="page-actions">
+    <%= link_to "Back", classrooms_path, class: "btn btn-ghost" %>
+  </div>
 </div>
 
 <div class="card">
-  <%= form_with model: @classroom, local: true, class: "form" do |form| %>
-    <% if @classroom.errors.any? %>
-      <div class="alert alert-error">
-        <h4><%= pluralize(@classroom.errors.count, "error") %> prohibited this classroom from being saved:</h4>
-        <ul>
-          <% @classroom.errors.full_messages.each do |message| %>
-            <li><%= message %></li>
-          <% end %>
-        </ul>
-      </div>
-    <% end %>
+  <% if @classroom.errors.any? %>
+    <div class="alert alert--error">
+      <strong><%= pluralize(@classroom.errors.count, "error") %> prevented saving:</strong>
+      <ul style="margin:8px 0 0 18px;">
+        <% @classroom.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
 
-    <div class="grid grid-cols-2">
+  <%= form_with model: @classroom, local: true do |form| %>
+    <div class="form-grid">
       <div class="form-group">
         <%= form.label :name, class: "form-label" %>
         <%= form.text_field :name, class: "form-control" %>
@@ -26,28 +32,32 @@
 
       <div class="form-group">
         <%= form.label :capacity, class: "form-label" %>
-        <%= form.number_field :capacity, class: "form-control" %>
+        <%= form.number_field :capacity, class: "form-control", min: 0 %>
       </div>
 
-      <div class="form-group">
+      <div class="form-group" style="grid-column: 1 / -1;">
         <%= form.label :teacher_id, "Teacher", class: "form-label" %>
-        <%= form.select :teacher_id, User.where(role: 'teacher').map { |user| [user.name, user.id] }, { prompt: "Select Teacher" }, { class: "form-control" } %>
+        <%= form.select :teacher_id,
+              User.where(role: "teacher").order(:name).map { |u| [u.name, u.id] },
+              { prompt: "Select teacher" },
+              { class: "form-control" } %>
+        <div class="form-help" style="margin-top:6px;">Optional — you can assign later.</div>
+      </div>
+
+      <div class="form-group" style="grid-column: 1 / -1;">
+        <%= form.label :description, class: "form-label" %>
+        <%= form.text_area :description, rows: 3, class: "form-control" %>
+      </div>
+
+      <div class="form-group" style="grid-column: 1 / -1;">
+        <%= form.label :schedule, class: "form-label" %>
+        <%= form.text_area :schedule, rows: 3, class: "form-control" %>
       </div>
     </div>
 
-    <div class="form-group">
-      <%= form.label :description, class: "form-label" %>
-      <%= form.text_area :description, rows: 3, class: "form-control" %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :schedule, class: "form-label" %>
-      <%= form.text_area :schedule, rows: 3, class: "form-control" %>
-    </div>
-
-    <div class="d-flex justify-between mt-4">
+    <div class="page-actions" style="justify-content:flex-end; margin-top: 14px;">
+      <%= link_to "Cancel", classrooms_path, class: "btn" %>
       <%= form.submit "Create Classroom", class: "btn btn-primary" %>
-      <%= link_to "Cancel", classrooms_path, class: "btn btn-outline" %>
     </div>
   <% end %>
 </div>

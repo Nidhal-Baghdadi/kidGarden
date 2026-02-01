@@ -28,7 +28,6 @@ class Message < ApplicationRecord
   private
 
   def send_notification
-    # Send notification to recipient about the new message
     NotificationService.send_new_message_notification(self)
   end
 
@@ -47,8 +46,7 @@ class Message < ApplicationRecord
   private
 
   def broadcast_message
-    # Broadcast to recipient using ActionCable if available
-    # This would trigger real-time updates for the recipient
-    MessageBroadcastJob.perform_later(self)
+    MessageBroadcastJob.perform_later(id)
   end
+
 end

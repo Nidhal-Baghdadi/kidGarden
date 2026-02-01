@@ -1,45 +1,112 @@
 <% content_for :title, "Educational Resources" %>
 
-<div class="d-flex justify-between items-center mb-4">
-  <h1>Educational Resources</h1>
-  <% if current_user.admin? || current_user.teacher? %>
-    <%= link_to "New Resource", new_resource_path, class: "btn btn-primary" %>
+<div class="page-header">
+  <div>
+    <h1 class="page-header__title">Educational Resources</h1>
+    <p class="page-header__subtitle">Worksheets, lesson plans, and classroom materials.</p>
+  </div>
+
+  <div class="page-actions">
+    <% if current_user.admin? || current_user.teacher? %>
+      <%= link_to "New Resource", new_resource_path, class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:14px;">
+  <%= form_with url: resources_path, method: :get, local: true do |f| %>
+    <div class="form-grid" style="align-items:end;">
+      <div class="form-group">
+        <%= f.label :q, "Search", class: "form-label" %>
+        <%= f.text_field :q, value: params[:q], class: "form-control", placeholder: "Title, subject, category..." %>
+      </div>
+
+      <div class="form-group">
+        <%= f.label :category, "Category", class: "form-label" %>
+        <%= f.select :category,
+          options_for_select([["All", ""], ["Worksheet", "worksheet"], ["Presentation", "presentation"], ["Video", "video"], ["Audio", "audio"], ["Document", "document"], ["Other", "other"]], params[:category].to_s),
+          {},
+          class: "form-control" %>
+      </div>
+
+      <div class="form-group">
+        <%= f.label :classroom_id, "Classroom", class: "form-label" %>
+        <%= f.select :classroom_id,
+          options_for_select([["All Classrooms", ""]] + Classroom.order(:name).map { |c| [c.name, c.id] }, params[:classroom_id].to_s),
+          {},
+          class: "form-control" %>
+      </div>
+
+      <div class="form-group" style="display:flex; gap:10px;">
+        <%= f.submit "Filter", class: "btn btn-primary" %>
+        <%= link_to "Reset", resources_path, class: "btn" %>
+      </div>
+    </div>
   <% end %>
 </div>
 
 <div class="card">
-  <div class="table-header">
-    <div class="table-actions">
-      <input type="text"
-             class="search-box"
-             data-table-target="search"
-             placeholder="Search resources...">
-    </div>
-  </div>
-  <div class="table-container">
-    <table class="table" id="resources-table">
-      <thead>
-        <tr>
-          <th>Title</th>
-          <th>Category</th>
-          <th>Subject</th>
-          <th>Classroom</th>
-          <th>Uploaded By</th>
-          <th class="no-sort">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-      </tbody>
-    </table>
-  </div>
-</div>
+  <% if @resources.any? %>
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Category</th>
+            <th>Subject</th>
+            <th>Classroom</th>
+            <th>Uploaded By</th>
+            <th>Uploaded</th>
+            <th class="no-sort">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @resources.each do |resource| %>
+            <tr>
+              <td>
+                <div style="font-weight:700;">
+                  <%= link_to resource.title, resource, style: "text-decoration:none;" %>
+                </div>
+                <div class="form-help" style="margin:4px 0 0 0;">
+                  <%= resource.description.present? ? truncate(resource.description, length: 90) : "—" %>
+                </div>
+              </td>
 
-<script>
-  $(document).ready(function() {
-    $('#resources-table').DataTable({
-      "processing": true,
-      "serverSide": true,
-      "ajax": "<%= resources_path(format: :json) %>"
-    });
-  });
-</script>
+              <td>
+                <span class="status-badge">
+                  <%= resource.category.present? ? resource.category.humanize : "—" %>
+                </span>
+              </td>
+
+              <td><%= resource.subject.presence || "—" %></td>
+              <td><%= resource.classroom&.name || "All Classrooms" %></td>
+              <td><%= resource.user&.name || "System" %></td>
+              <td><%= resource.created_at.strftime("%b %d, %Y") %></td>
+
+              <td>
+                <%= link_to "View", resource, class: "btn btn-sm" %>
+                <% if current_user.admin? || current_user.id == resource.user_id %>
+                  <%= link_to "Edit", edit_resource_path(resource), class: "btn btn-ghost btn-sm" %>
+                  <%= link_to "Delete", resource,
+                        method: :delete,
+                        data: { confirm: "Delete this resource?" },
+                        class: "btn btn-ghost btn-sm" %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="form-help" style="margin:0;">
+      No resources found. Try adjusting filters or upload a new resource.
+    </div>
+
+    <% if current_user.admin? || current_user.teacher? %>
+      <div style="margin-top:12px;">
+        <%= link_to "Upload Resource", new_resource_path, class: "btn btn-primary" %>
+      </div>
+    <% end %>
+  <% end %>
+</div>

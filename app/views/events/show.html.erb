@@ -1,46 +1,51 @@
 <% content_for :title, "Event Details" %>
 
-<div class="d-flex justify-between items-center mb-4">
-  <h1><%= @event.title %></h1>
+<div class="page-header">
   <div>
+    <h1 class="page-header__title"><%= @event.title %></h1>
+    <p class="page-header__subtitle">Event details</p>
+  </div>
+
+  <div class="page-actions">
     <%= link_to "Edit", edit_event_path(@event), class: "btn btn-primary" %>
-    <%= link_to "Back to Events", events_path, class: "btn btn-outline", style: "margin-left: 0.5rem;" %>
+    <%= link_to "Back", events_path, class: "btn btn-ghost" %>
   </div>
 </div>
 
-<div class="grid grid-cols-2 mb-4">
+<div class="form-grid" style="margin-bottom:14px;">
   <div class="card">
-    <h3>Event Information</h3>
+    <h3 style="margin:0 0 12px 0;">Schedule</h3>
+
     <div class="form-group">
-      <label><strong>Title:</strong></label>
-      <p><%= @event.title %></p>
+      <div class="form-label">Start</div>
+      <div class="readonly"><%= @event.start_time&.strftime("%B %d, %Y at %I:%M %p") || "—" %></div>
     </div>
+
     <div class="form-group">
-      <label><strong>Start Time:</strong></label>
-      <p><%= @event.start_time.strftime("%B %d, %Y at %I:%M %p") %></p>
-    </div>
-    <div class="form-group">
-      <label><strong>End Time:</strong></label>
-      <p><%= @event.end_time.strftime("%B %d, %Y at %I:%M %p") %></p>
+      <div class="form-label">End</div>
+      <div class="readonly"><%= @event.end_time&.strftime("%B %d, %Y at %I:%M %p") || "—" %></div>
     </div>
   </div>
 
   <div class="card">
-    <h3>Additional Information</h3>
+    <h3 style="margin:0 0 12px 0;">Info</h3>
+
     <div class="form-group">
-      <label><strong>Location:</strong></label>
-      <p><%= @event.location %></p>
+      <div class="form-label">Location</div>
+      <div class="readonly"><%= @event.location.presence || "—" %></div>
     </div>
+
     <div class="form-group">
-      <label><strong>Organizer:</strong></label>
-      <p><%= @event.organizer&.name || "N/A" %></p>
+      <div class="form-label">Organizer</div>
+      <div class="readonly"><%= @event.organizer&.name || "—" %></div>
     </div>
   </div>
 </div>
 
 <div class="card">
-  <h3>Event Description</h3>
-  <div class="form-group">
-    <p><%= @event.description.present? ? @event.description : "No description provided" %></p>
+  <h3 style="margin:0 0 12px 0;">Description</h3>
+
+  <div class="readonly" style="height:auto; padding:10px 12px; align-items:flex-start;">
+    <%= @event.description.presence || "No description provided." %>
   </div>
 </div>

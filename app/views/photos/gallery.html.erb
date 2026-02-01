@@ -1,75 +1,110 @@
 <% content_for :title, "Photo Gallery" %>
 
-<div class="d-flex justify-between items-center mb-4">
-  <h1>Photo Gallery</h1>
-  <% if current_user.teacher? || current_user.admin? %>
-    <%= link_to "Upload Photo", new_photo_path, class: "btn btn-primary" %>
-  <% end %>
+<div class="page-header">
+  <div>
+    <h1 class="page-header__title">Photo Gallery</h1>
+    <p class="page-header__subtitle">Approved photos visible to your account.</p>
+  </div>
+
+  <div class="page-actions">
+    <%= link_to "Manage", photos_path, class: "btn" %>
+    <% if current_user.teacher? || current_user.admin? %>
+      <%= link_to "Upload Photo", new_photo_path, class: "btn btn-primary" %>
+    <% end %>
+  </div>
 </div>
 
-<!-- Gallery view with masonry layout -->
-<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-  <% @photos.each do |photo| %>
-    <div class="card overflow-hidden group">
-      <% if photo.image.attached? && photo.image.variable? %>
-        <%= link_to photo.image_url, target: "_blank" do %>
-          <%= image_tag photo.medium_image_url, class: "w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105", alt: photo.title %>
-        <% end %>
-      <% else %>
-        <div class="bg-gray-200 border-2 border-dashed rounded-xl w-full h-64 flex items-center justify-center">
-          <span class="text-gray-500">No Image Available</span>
-        </div>
-      <% end %>
-      
-      <div class="p-4">
-        <div class="flex justify-between items-start">
-          <div class="flex-1">
-            <h3 class="font-semibold text-lg truncate"><%= photo.title %></h3>
-            <p class="text-sm text-gray-600 mt-1"><%= photo.student.full_name %></p>
-            <p class="text-xs text-gray-500 mt-1"><%= photo.created_at.strftime("%B %d, %Y") %></p>
-            
-            <% if photo.description.present? %>
-              <p class="text-sm mt-2 line-clamp-2"><%= photo.description %></p>
-            <% end %>
-          </div>
-          
-          <span class="ml-2 text-xs px-2 py-1 rounded-full bg-gray-100">
-            <%= photo.category&.humanize %>
-          </span>
-        </div>
-        
-        <div class="mt-3 flex justify-between">
-          <span class="text-xs text-gray-500">
-            Uploaded by: <%= photo.uploaded_by.name %>
-          </span>
-          
-          <% if current_user.teacher? || current_user.admin? %>
-            <%= link_to "Details", photo, class: "btn btn-outline btn-sm" %>
-          <% end %>
-        </div>
+<div class="card" style="margin-bottom:14px;">
+  <%= form_with url: gallery_photos_path, method: :get, local: true do |form| %>
+    <div class="form-grid">
+      <div class="form-group">
+        <%= form.label :student_id, "Student", class: "form-label" %>
+        <%= form.select :student_id,
+              options_from_collection_for_select(@accessible_students, :id, :full_name, params[:student_id]),
+              { prompt: "All students" },
+              { class: "form-control" } %>
       </div>
+
+      <div class="form-group">
+        <%= form.label :classroom_id, "Classroom", class: "form-label" %>
+        <%= form.select :classroom_id,
+              options_from_collection_for_select(@accessible_classrooms, :id, :name, params[:classroom_id]),
+              { prompt: "All classrooms" },
+              { class: "form-control" } %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :category, "Category", class: "form-label" %>
+        <%= form.select :category,
+              options_for_select(
+                [
+                  ["All categories", ""],
+                  ["Activity", "activity"],
+                  ["Event", "event"],
+                  ["Milestone", "milestone"],
+                  ["Daily Life", "daily_life"]
+                ],
+                params[:category]
+              ),
+              {},
+              { class: "form-control" } %>
+      </div>
+    </div>
+
+    <div class="page-actions" style="justify-content:flex-end; margin-top: 10px;">
+      <%= link_to "Clear", gallery_photos_path, class: "btn btn-ghost" %>
+      <%= form.submit "Filter", class: "btn btn-primary" %>
     </div>
   <% end %>
 </div>
 
-<% if @photos.empty? %>
-  <div class="text-center py-12">
-    <svg class="mx-auto purpose-icon text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-    </svg>
-    <h3 class="mt-2 text-sm font-medium">No photos yet</h3>
-    <p class="mt-1 text-sm text-gray-500">Get started by uploading your first photo.</p>
-    <% if current_user.teacher? || current_user.admin? %>
-      <div class="mt-6">
-        <%= link_to "Upload Photo", new_photo_path, class: "btn btn-primary" %>
-      </div>
-    <% end%>
-  </div>
-<% end %>
+<% if @photos.any? %>
+  <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px;">
+    <% @photos.each do |photo| %>
+      <div class="card" style="padding:0; overflow:hidden;">
+        <%= link_to photo_path(photo), style: "text-decoration:none;" do %>
+          <% if photo.image.attached? %>
+            <%= image_tag url_for(photo.image.variant(resize_to_fill: [520, 360])),
+                          alt: photo.title.to_s,
+                          style: "width:100%; height:180px; object-fit:cover; display:block;" %>
+          <% else %>
+            <div class="readonly" style="height:180px; justify-content:center;">No image</div>
+          <% end %>
 
-<!-- Pagination -->
-<% if @photos.respond_to?(:current_page) %>
-  <div class="mt-6">
-    <%= paginate @photos %>
+          <div style="padding:12px;">
+            <div style="display:flex; justify-content:space-between; gap:10px;">
+              <div style="min-width:0;">
+                <div style="font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                  <%= photo.title.presence || "Photo" %>
+                </div>
+                <div class="form-help" style="margin:4px 0 0 0;">
+                  <%= photo.student&.full_name || "—" %>
+                </div>
+              </div>
+
+              <% if photo.category.present? %>
+                <span class="status-badge"><%= photo.category.humanize %></span>
+              <% end %>
+            </div>
+
+            <% if photo.description.present? %>
+              <div class="form-help" style="margin-top:8px;">
+                <%= photo.description.to_s.truncate(90) %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <% if defined?(paginate) && @photos.respond_to?(:current_page) %>
+    <div style="margin-top:14px;">
+      <%= paginate @photos %>
+    </div>
+  <% end %>
+<% else %>
+  <div class="card">
+    <div class="form-help">No approved photos found.</div>
   </div>
 <% end %>

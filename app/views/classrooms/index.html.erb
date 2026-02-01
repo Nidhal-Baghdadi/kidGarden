@@ -1,35 +1,67 @@
 <% content_for :title, "Classrooms" %>
 
-<div class="d-flex justify-between items-center mb-4">
-  <h1>Classrooms</h1>
-  <%= link_to "New Classroom", new_classroom_path, class: "btn btn-primary" %>
+<div class="page-header">
+  <div>
+    <h1 class="page-header__title">Classrooms</h1>
+    <p class="page-header__subtitle">Manage classrooms, teachers, and capacity.</p>
+  </div>
+
+  <div class="page-actions">
+    <% if current_user.admin? || current_user.teacher? %>
+      <%= link_to "New Classroom", new_classroom_path, class: "btn btn-primary" %>
+    <% end %>
+  </div>
 </div>
 
 <div class="card">
   <div class="table-container">
-    <table class="table" id="classrooms-table">
+    <table class="table">
       <thead>
         <tr>
           <th>ID</th>
           <th>Name</th>
           <th>Teacher</th>
           <th>Capacity</th>
-          <th>Student Count</th>
+          <th>Students</th>
           <th class="no-sort">Actions</th>
         </tr>
       </thead>
       <tbody>
+        <% @classrooms.each do |classroom| %>
+          <tr>
+            <td><%= classroom.id %></td>
+            <td><%= classroom.name %></td>
+            <td><%= classroom.teacher&.name || "Unassigned" %></td>
+            <td><%= classroom.capacity %></td>
+            <td><%= classroom.students.size %></td>
+            <td>
+              <%= link_to "View", classroom, class: "btn btn-sm" %>
+
+              <% if current_user.admin? || (current_user.teacher? && classroom.teacher == current_user) %>
+                <%= link_to "Edit", edit_classroom_path(classroom), class: "btn btn-ghost btn-sm" %>
+              <% end %>
+
+              <% if current_user.admin? %>
+                <%= link_to "Delete", classroom,
+                      method: :delete,
+                      data: { confirm: "Delete this classroom?" },
+                      class: "btn btn-ghost btn-sm" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
       </tbody>
     </table>
   </div>
-</div>
 
-<script>
-  $(document).ready(function() {
-    $('#classrooms-table').DataTable({
-      "processing": true,
-      "serverSide": true,
-      "ajax": "<%= classrooms_path(format: :json) %>"
-    });
-  });
-</script>
+  <% if @classrooms.empty? %>
+    <div style="padding:18px;">
+      <div class="form-help">No classrooms found.</div>
+      <% if current_user.admin? || current_user.teacher? %>
+        <div style="margin-top:12px;">
+          <%= link_to "Create Classroom", new_classroom_path, class: "btn btn-primary" %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>

@@ -1,15 +1,23 @@
 class FeesController < ApplicationController
+  before_action :authenticate_user!
   before_action :set_fee, only: [:show, :edit, :update, :destroy]
 
   def index
-    respond_to do |format|
-      format.html
-      format.json { render json: FeesDatatable.new(params, view_context: view_context) }
-    end
+    @fees =
+      if current_user.admin?
+        Fee.includes(:student).order(due_date: :desc)
+      elsif current_user.teacher?
+        student_ids = Student.where(classroom_id: current_user.classrooms_taught.select(:id)).select(:id)
+        Fee.where(student_id: student_ids).includes(:student).order(due_date: :desc)
+      elsif current_user.parent?
+        student_ids = Student.where(parent_id: current_user.id).select(:id)
+        Fee.where(student_id: student_ids).includes(:student).order(due_date: :desc)
+      else
+        Fee.none
+      end
   end
 
   def show
-    # Allow access based on role
     unless can_access_fee?(@fee)
       redirect_to root_path, alert: "You don't have permission to view this fee."
       return
@@ -24,14 +32,13 @@ class FeesController < ApplicationController
     @fee = Fee.new(fee_params)
 
     if @fee.save
-      redirect_to @fee, notice: 'Fee was successfully created.'
+      redirect_to @fee, notice: "Fee was successfully created."
     else
-      render :new
+      render :new, status: :unprocessable_entity
     end
   end
 
   def edit
-    # Only teachers and admins can edit fees
     unless current_user.admin? || current_user.teacher?
       redirect_to root_path, alert: "You don't have permission to edit this fee."
       return
@@ -44,7 +51,6 @@ class FeesController < ApplicationController
   end
 
   def update
-    # Only teachers and admins can update fees
     unless current_user.admin? || current_user.teacher?
       redirect_to root_path, alert: "You don't have permission to update this fee."
       return
@@ -56,21 +62,20 @@ class FeesController < ApplicationController
     end
 
     if @fee.update(fee_params)
-      redirect_to @fee, notice: 'Fee was successfully updated.'
+      redirect_to @fee, notice: "Fee was successfully updated."
     else
-      render :edit
+      render :edit, status: :unprocessable_entity
     end
   end
 
   def destroy
-    # Only admins can delete fees
     unless current_user.admin?
       redirect_to root_path, alert: "You don't have permission to delete this fee."
       return
     end
 
     @fee.destroy
-    redirect_to fees_url, notice: 'Fee was successfully deleted.'
+    redirect_to fees_path, notice: "Fee was successfully deleted."
   end
 
   private
@@ -87,7 +92,7 @@ class FeesController < ApplicationController
     return false unless fee.student
 
     current_user.admin? ||
-    (current_user.teacher? && fee.student.classroom && fee.student.classroom.teacher == current_user) ||
-    (current_user.parent? && fee.student.parent == current_user)
+      (current_user.teacher? && fee.student.classroom && fee.student.classroom.teacher == current_user) ||
+      (current_user.parent? && fee.student.parent == current_user)
   end
 end

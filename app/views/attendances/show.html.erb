@@ -1,43 +1,62 @@
 <% content_for :title, "Attendance Details" %>
 
-<div class="d-flex justify-between items-center mb-4">
-  <h1>Attendance Record</h1>
+<div class="page-header">
   <div>
-    <%= link_to "Edit", edit_attendance_path(@attendance), class: "btn btn-primary" %>
-    <%= link_to "Back to Attendance", attendances_path, class: "btn btn-outline", style: "margin-left: 0.5rem;" %>
+    <h1 class="page-header__title">Attendance Record</h1>
+    <p class="page-header__subtitle">
+      <%= @attendance.student&.full_name || "Student" %> • <%= @attendance.date&.strftime("%B %d, %Y") || "—" %>
+    </p>
+  </div>
+
+  <div class="page-actions">
+    <% if current_user.admin? || current_user.teacher? || current_user.staff? %>
+      <%= link_to "Edit", edit_attendance_path(@attendance), class: "btn btn-primary" %>
+    <% end %>
+    <%= link_to "Back", attendances_path, class: "btn btn-ghost" %>
   </div>
 </div>
 
-<div class="grid grid-cols-2 mb-4">
+<div class="form-grid" style="margin-bottom:14px;">
   <div class="card">
-    <h3>Attendance Information</h3>
+    <h3 style="margin:0 0 12px 0;">Attendance</h3>
+
     <div class="form-group">
-      <label><strong>Student:</strong></label>
-      <p><%= @attendance.student&.first_name %> <%= @attendance.student&.last_name %></p>
+      <div class="form-label">Student</div>
+      <div class="readonly"><%= @attendance.student&.full_name || "—" %></div>
     </div>
-    <div class="form-group">
-      <label><strong>Date:</strong></label>
-      <p><%= @attendance.date.strftime("%B %d, %Y") %></p>
-    </div>
-    <div class="form-group">
-      <label><strong>Status:</strong></label>
-      <p>
-        <span class="status-badge status-<%= @attendance.status %>">
-          <%= @attendance.status.humanize %>
-        </span>
-      </p>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <div class="form-label">Date</div>
+        <div class="readonly"><%= @attendance.date&.strftime("%B %d, %Y") || "—" %></div>
+      </div>
+
+      <div class="form-group">
+        <div class="form-label">Status</div>
+        <div class="readonly">
+          <% if @attendance.status.present? %>
+            <span class="status-badge status-<%= @attendance.status %>"><%= @attendance.status.humanize %></span>
+          <% else %>
+            —
+          <% end %>
+        </div>
+      </div>
     </div>
   </div>
 
   <div class="card">
-    <h3>Additional Information</h3>
+    <h3 style="margin:0 0 12px 0;">Details</h3>
+
     <div class="form-group">
-      <label><strong>Recorded By:</strong></label>
-      <p><%= @attendance.staff&.name || "System" %></p>
+      <div class="form-label">Recorded by</div>
+      <div class="readonly"><%= @attendance.staff&.name || "System" %></div>
     </div>
+
     <div class="form-group">
-      <label><strong>Notes:</strong></label>
-      <p><%= @attendance.notes.present? ? @attendance.notes : "None" %></p>
+      <div class="form-label">Notes</div>
+      <div class="readonly" style="height:auto; padding:10px 12px; align-items:flex-start;">
+        <%= @attendance.notes.presence || "—" %>
+      </div>
     </div>
   </div>
 </div>

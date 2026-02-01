@@ -1,0 +1,95 @@
+<%# locals: photo:, students:, submit_label: %>
+
+<% if photo.errors.any? %>
+  <div class="alert alert--error" style="margin-bottom:14px;">
+    <strong><%= pluralize(photo.errors.count, "error") %> prevented saving:</strong>
+    <ul style="margin:8px 0 0 18px;">
+      <% photo.errors.full_messages.each do |m| %>
+        <li><%= m %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<%= form_with model: photo, local: true, multipart: true do |form| %>
+  <div class="form-grid">
+    <div class="form-group">
+      <%= form.label :student_id, "Student", class: "form-label" %>
+      <%= form.select :student_id,
+            options_from_collection_for_select(students, :id, :full_name, photo.student_id),
+            { prompt: "Select student" },
+            { class: "form-control" } %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :classroom_id, "Classroom", class: "form-label" %>
+      <%= form.select :classroom_id,
+            options_from_collection_for_select(Classroom.order(:name), :id, :name, photo.classroom_id),
+            { prompt: "Select classroom (optional)" },
+            { class: "form-control" } %>
+      <div class="form-help" style="margin-top:6px;">Optional if the student already implies a classroom.</div>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :title, class: "form-label" %>
+      <%= form.text_field :title, class: "form-control" %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :category, class: "form-label" %>
+      <%= form.select :category,
+            options_for_select(
+              [
+                ["Select category", ""],
+                ["Activity", "activity"],
+                ["Event", "event"],
+                ["Milestone", "milestone"],
+                ["Daily Life", "daily_life"]
+              ],
+              photo.category
+            ),
+            {},
+            { class: "form-control" } %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :taken_at, "Date taken", class: "form-label" %>
+      <%= form.datetime_local_field :taken_at,
+            value: photo.taken_at&.strftime("%Y-%m-%dT%H:%M"),
+            class: "form-control" %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :image, "Photo", class: "form-label" %>
+      <%= form.file_field :image, class: "form-control", accept: "image/*" %>
+      <div class="form-help" style="margin-top:6px;">JPG/PNG/GIF. Keep sizes reasonable.</div>
+
+      <% if photo.image.attached? %>
+        <div style="margin-top:10px;">
+          <div class="form-help" style="margin-bottom:6px;">Current image:</div>
+          <%= image_tag url_for(photo.image.variant(resize_to_fill: [220, 160])),
+                alt: (photo.title.presence || "Photo"),
+                style: "border-radius: 12px; border:1px solid var(--border);" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :description, class: "form-label" %>
+    <%= form.text_area :description, rows: 4, class: "form-control" %>
+  </div>
+
+  <div class="form-group">
+    <label class="form-checkbox">
+      <%= form.check_box :visible_to_parents %>
+      <span class="form-label" style="margin:0;">Visible to parents</span>
+    </label>
+    <div class="form-help" style="margin-top:6px;">If enabled, parents of the linked student can see it (after approval if you use approval).</div>
+  </div>
+
+  <div class="page-actions" style="justify-content:flex-end; margin-top: 14px;">
+    <%= link_to "Cancel", photos_path, class: "btn" %>
+    <%= form.submit submit_label, class: "btn btn-primary" %>
+  </div>
+<% end %>

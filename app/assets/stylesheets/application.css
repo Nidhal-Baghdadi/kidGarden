@@ -666,3 +666,92 @@ textarea.form-control, textarea {
   justify-content: center;
   background: var(--surface);
 }
+
+
+/* ----------------------------
+   Messages (thread + composer)
+   ---------------------------- */
+
+.messages-thread {
+  padding: 16px;
+  height: 420px;
+  overflow-y: auto;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.msg { margin-bottom: 14px; display: flex; flex-direction: column; }
+.msg__meta { display: flex; gap: 8px; align-items: baseline; color: var(--muted); font-size: .82rem; }
+.msg__name { color: var(--text-2); font-weight: 700; }
+.msg__time { color: var(--muted); }
+.msg__status { color: var(--muted); }
+
+.msg__bubble {
+  margin-top: 6px;
+  max-width: 72%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.msg--mine { align-items: flex-end; }
+.msg--mine .msg__bubble {
+  background: rgba(15,118,110,.10);
+  border-color: rgba(15,118,110,.22);
+}
+
+.msg--theirs { align-items: flex-start; }
+
+.msg__actions { margin-top: 6px; text-align: right; }
+.msg__delete {
+  font-size: .82rem;
+  color: var(--danger);
+  text-decoration: none;
+  font-weight: 650;
+}
+.msg__delete:hover { text-decoration: underline; }
+
+/* Attachments */
+.msg__attachments {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.msg__file {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  text-decoration: none;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.msg__file:hover { background: var(--surface-2); color: var(--text); }
+
+/* Composer */
+.composer { padding: 16px; background: var(--surface); }
+.composer__grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: end;
+}
+.composer__actions {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  padding-bottom: 2px;
+}
+
+@media (max-width: 900px) {
+  .messages-thread { height: 360px; }
+  .msg__bubble { max-width: 100%; }
+  .composer__grid { grid-template-columns: 1fr; }
+  .composer__actions { justify-content: flex-end; }
+}

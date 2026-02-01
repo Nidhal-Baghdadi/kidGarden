@@ -1,32 +1,42 @@
 <% content_for :title, "New Fee" %>
 
-<div class="d-flex justify-between items-center mb-4">
-  <h1>Create New Fee</h1>
-  <%= link_to "Back to Fees", fees_path, class: "btn btn-outline" %>
+<div class="page-header">
+  <div>
+    <h1 class="page-header__title">Create Fee</h1>
+    <p class="page-header__subtitle">Add a new fee record.</p>
+  </div>
+
+  <div class="page-actions">
+    <%= link_to "Back", fees_path, class: "btn btn-ghost" %>
+  </div>
 </div>
 
 <div class="card">
-  <%= form_with model: @fee, local: true, class: "form" do |form| %>
-    <% if @fee.errors.any? %>
-      <div class="alert alert-error">
-        <h4><%= pluralize(@fee.errors.count, "error") %> prohibited this fee from being saved:</h4>
-        <ul>
-          <% @fee.errors.full_messages.each do |message| %>
-            <li><%= message %></li>
-          <% end %>
-        </ul>
-      </div>
-    <% end %>
+  <% if @fee.errors.any? %>
+    <div class="alert alert--error">
+      <strong><%= pluralize(@fee.errors.count, "error") %> prevented saving:</strong>
+      <ul style="margin:8px 0 0 18px;">
+        <% @fee.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
 
-    <div class="grid grid-cols-2">
+  <%= form_with model: @fee, local: true do |form| %>
+    <div class="form-grid">
       <div class="form-group">
         <%= form.label :student_id, "Student", class: "form-label" %>
-        <%= form.select :student_id, Student.all.map { |student| ["#{student.first_name} #{student.last_name}", student.id] }, { prompt: "Select Student" }, { class: "form-control" } %>
+        <%= form.select :student_id,
+              Student.order(:first_name, :last_name).map { |s| [s.full_name, s.id] },
+              { prompt: "Select student" },
+              { class: "form-control" } %>
       </div>
 
       <div class="form-group">
         <%= form.label :amount, class: "form-label" %>
         <%= form.number_field :amount, step: 0.01, class: "form-control" %>
+        <div class="form-help" style="margin-top:6px;">Example: 250.00</div>
       </div>
 
       <div class="form-group">
@@ -36,12 +46,16 @@
 
       <div class="form-group">
         <%= form.label :status, class: "form-label" %>
-        <%= form.select :status, Fee.statuses.keys.map { |key| [key.humanize, key] }, { prompt: "Select Status" }, { class: "form-control" } %>
+        <%= form.select :status,
+              Fee.statuses.keys.map { |k| [k.humanize, k] },
+              { prompt: "Select status" },
+              { class: "form-control" } %>
       </div>
 
       <div class="form-group">
-        <%= form.label :receipt_number, "Receipt Number", class: "form-label" %>
+        <%= form.label :receipt_number, "Receipt #", class: "form-label" %>
         <%= form.text_field :receipt_number, class: "form-control" %>
+        <div class="form-help" style="margin-top:6px;">Optional</div>
       </div>
     </div>
 
@@ -50,9 +64,9 @@
       <%= form.text_area :description, rows: 3, class: "form-control" %>
     </div>
 
-    <div class="d-flex justify-between mt-4">
+    <div class="page-actions" style="justify-content:flex-end; margin-top: 14px;">
+      <%= link_to "Cancel", fees_path, class: "btn" %>
       <%= form.submit "Create Fee", class: "btn btn-primary" %>
-      <%= link_to "Cancel", fees_path, class: "btn btn-outline" %>
     </div>
   <% end %>
 </div>

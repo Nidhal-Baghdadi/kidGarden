@@ -1,88 +1,114 @@
 <% content_for :title, "Student Details" %>
 
-<div class="d-flex justify-between items-center mb-4">
-  <h1>Student: <%= @student.first_name %> <%= @student.last_name %></h1>
+<div class="page-header">
   <div>
+    <h1 class="page-header__title"><%= @student.first_name %> <%= @student.last_name %></h1>
+    <p class="page-header__subtitle">Student profile and linked parents / guardians</p>
+  </div>
+
+  <div class="page-actions">
     <%= link_to "Edit", edit_student_path(@student), class: "btn btn-primary" %>
-    <%= link_to "Back to Students", students_path, class: "btn btn-outline", style: "margin-left: 0.5rem;" %>
+    <%= link_to "Back", students_path, class: "btn" %>
   </div>
 </div>
 
-<div class="grid grid-cols-2 mb-4">
+<div class="form-grid" style="margin-bottom:14px;">
   <div class="card">
-    <h3>Personal Information</h3>
-    <div class="form-group">
-      <label><strong>First Name:</strong></label>
-      <p><%= @student.first_name %></p>
+    <h3 style="margin:0 0 12px 0;">Personal Information</h3>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <div class="form-label">First name</div>
+        <div class="readonly"><%= @student.first_name.presence || "—" %></div>
+      </div>
+
+      <div class="form-group">
+        <div class="form-label">Last name</div>
+        <div class="readonly"><%= @student.last_name.presence || "—" %></div>
+      </div>
     </div>
+
     <div class="form-group">
-      <label><strong>Last Name:</strong></label>
-      <p><%= @student.last_name %></p>
+      <div class="form-label">Date of birth</div>
+      <div class="readonly"><%= @student.date_of_birth&.strftime("%B %d, %Y") || "—" %></div>
     </div>
-    <div class="form-group">
-      <label><strong>Date of Birth:</strong></label>
-      <p><%= @student.date_of_birth&.strftime("%B %d, %Y") %></p>
-    </div>
-    <div class="form-group">
-      <label><strong>Gender:</strong></label>
-      <p><%= @student.gender.humanize %></p>
-    </div>
-    <div class="form-group">
-      <label><strong>Status:</strong></label>
-      <p>
-        <span class="status-badge status-<%= @student.status %>">
-          <%= @student.status.humanize %>
-        </span>
-      </p>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <div class="form-label">Gender</div>
+        <div class="readonly"><%= @student.gender.present? ? @student.gender.humanize : "—" %></div>
+      </div>
+
+      <div class="form-group">
+        <div class="form-label">Status</div>
+        <div class="readonly">
+          <span class="status-badge status-<%= @student.status %>"><%= @student.status.humanize %></span>
+        </div>
+      </div>
     </div>
   </div>
 
   <div class="card">
-    <h3>School Information</h3>
-    <div class="form-group">
-      <label><strong>Enrollment Date:</strong></label>
-      <p><%= @student.enrollment_date&.strftime("%B %d, %Y") %></p>
-    </div>
-    <div class="form-group">
-      <label><strong>Classroom:</strong></label>
-      <p><%= @student.classroom&.name || "Unassigned" %></p>
-    </div>
-    <div class="form-group">
-      <label><strong>Parent/Guardian:</strong></label>
-      <p><%= @student.parent&.name || "Not assigned" %></p>
-    </div>
-  </div>
-</div>
+    <h3 style="margin:0 0 12px 0;">School Information</h3>
 
-<div class="grid grid-cols-2">
-  <div class="card">
-    <h3>Emergency Contact</h3>
     <div class="form-group">
-      <label><strong>Contact Name:</strong></label>
-      <p><%= @student.emergency_contact_name || "Not provided" %></p>
+      <div class="form-label">Enrollment date</div>
+      <div class="readonly"><%= @student.enrollment_date&.strftime("%B %d, %Y") || "—" %></div>
     </div>
-    <div class="form-group">
-      <label><strong>Contact Phone:</strong></label>
-      <p><%= @student.emergency_contact_phone || "Not provided" %></p>
-    </div>
-  </div>
 
-  <div class="card">
-    <h3>Medical Information</h3>
     <div class="form-group">
-      <label><strong>Medical Details:</strong></label>
-      <p><%= @student.medical_information.present? ? @student.medical_information : "Not provided" %></p>
+      <div class="form-label">Classroom</div>
+      <div class="readonly"><%= @student.classroom&.name || "Unassigned" %></div>
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">Primary parent / guardian</div>
+      <div class="readonly"><%= @student.parent&.name || "Not assigned" %></div>
     </div>
   </div>
 </div>
 
-<div class="card mt-4">
-  <div class="d-flex justify-between items-center mb-3">
-    <h3>Related Parents/Guardians</h3>
-    <%= link_to "Add Parent/Guardian", "#", class: "btn btn-primary", onclick: "document.getElementById('add-parent-form').scrollIntoView(); return false;" %>
+<div class="form-grid" style="margin-bottom:14px;">
+  <div class="card">
+    <h3 style="margin:0 0 12px 0;">Emergency Contact</h3>
+
+    <div class="form-group">
+      <div class="form-label">Contact name</div>
+      <div class="readonly"><%= @student.emergency_contact_name.presence || "Not provided" %></div>
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">Contact phone</div>
+      <div class="readonly"><%= @student.emergency_contact_phone.presence || "Not provided" %></div>
+    </div>
   </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 12px 0;">Medical Information</h3>
+
+    <div class="form-group">
+      <div class="form-label">Medical details</div>
+      <div class="readonly" style="height:auto; padding:10px 12px; align-items:flex-start;">
+        <%= @student.medical_information.present? ? @student.medical_information : "Not provided" %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:14px;">
+  <div class="page-header" style="margin-bottom:10px;">
+    <div>
+      <h2 class="page-header__title" style="font-size:1.05rem;">Related Parents / Guardians</h2>
+      <p class="page-header__subtitle">Additional contacts linked to this student.</p>
+    </div>
+
+    <div class="page-actions">
+      <%= link_to "Add parent / guardian", "#add-parent-form", class: "btn btn-primary" %>
+    </div>
+  </div>
+
   <% if @student.parent_student_relationships.any? %>
-    <div class="table-responsive">
+    <div class="table-container">
       <table class="table">
         <thead>
           <tr>
@@ -90,7 +116,7 @@
             <th>Email</th>
             <th>Phone</th>
             <th>Relationship</th>
-            <th>Actions</th>
+            <th class="no-sort">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -98,11 +124,13 @@
             <tr>
               <td><%= relationship.parent.name %></td>
               <td><%= relationship.parent.email %></td>
-              <td><%= relationship.parent.phone %></td>
+              <td><%= relationship.parent.phone.presence || "—" %></td>
               <td><%= relationship.relationship_type.humanize %></td>
               <td>
-                <%= link_to "Remove", relationship, method: :delete, class: "btn btn-danger",
-                            confirm: "Are you sure you want to remove this parent relationship?" %>
+                <%= link_to "Remove", relationship,
+                      method: :delete,
+                      data: { confirm: "Are you sure you want to remove this parent relationship?" },
+                      class: "btn btn-ghost btn-sm" %>
               </td>
             </tr>
           <% end %>
@@ -110,28 +138,44 @@
       </table>
     </div>
   <% else %>
-    <p>No additional parents/guardians are associated with this student.</p>
+    <div class="form-help">No additional parents / guardians are associated with this student.</div>
   <% end %>
 </div>
 
-<div class="card mt-4" id="add-parent-form">
-  <h3>Add Parent/Guardian</h3>
-  <%= form_with model: ParentStudentRelationship.new, url: parent_student_relationships_path, local: true, class: "form" do |form| %>
+<div class="card" id="add-parent-form">
+  <div class="page-header" style="margin-bottom:10px;">
+    <div>
+      <h2 class="page-header__title" style="font-size:1.05rem;">Add Parent / Guardian</h2>
+      <p class="page-header__subtitle">Link another parent or guardian to this student.</p>
+    </div>
+  </div>
+
+  <%= form_with model: ParentStudentRelationship.new,
+                url: parent_student_relationships_path,
+                local: true do |form| %>
+
     <%= form.hidden_field :student_id, value: @student.id %>
-    <div class="grid grid-cols-2">
+
+    <div class="form-grid">
       <div class="form-group">
         <%= form.label :parent_id, "Parent/Guardian", class: "form-label" %>
-        <%= form.select :parent_id, User.where(role: 'parent').map { |user| [user.name, user.id] }, { prompt: "Select Parent" }, { class: "form-control" } %>
+        <%= form.select :parent_id,
+              User.where(role: "parent").map { |u| [u.name, u.id] },
+              { prompt: "Select parent" },
+              { class: "form-control" } %>
       </div>
 
       <div class="form-group">
-        <%= form.label :relationship_type, "Relationship Type", class: "form-label" %>
-        <%= form.select :relationship_type, ParentStudentRelationship.relationship_types.keys.map { |key| [key.humanize, key] }, { prompt: "Select Relationship" }, { class: "form-control" } %>
+        <%= form.label :relationship_type, "Relationship type", class: "form-label" %>
+        <%= form.select :relationship_type,
+              ParentStudentRelationship.relationship_types.keys.map { |k| [k.humanize, k] },
+              { prompt: "Select relationship" },
+              { class: "form-control" } %>
       </div>
     </div>
 
-    <div class="d-flex justify-between mt-4">
-      <%= form.submit "Add Parent", class: "btn btn-primary" %>
+    <div class="page-actions" style="justify-content:flex-end; margin-top: 10px;">
+      <%= form.submit "Add", class: "btn btn-primary" %>
     </div>
   <% end %>
 </div>

@@ -1,66 +1,82 @@
 <% content_for :title, @resource.title %>
 
-<div class="d-flex justify-between items-center mb-4">
-  <h1><%= @resource.title %></h1>
+<div class="page-header">
   <div>
+    <h1 class="page-header__title"><%= @resource.title %></h1>
+    <p class="page-header__subtitle">
+      <%= @resource.category.present? ? @resource.category.humanize : "Resource" %>
+      • <%= @resource.classroom&.name || "All Classrooms" %>
+    </p>
+  </div>
+
+  <div class="page-actions">
     <% if current_user.admin? || current_user.id == @resource.user_id %>
       <%= link_to "Edit", edit_resource_path(@resource), class: "btn btn-primary" %>
-      <%= link_to "Back to Resources", resources_path, class: "btn btn-outline", style: "margin-left: 0.5rem;" %>
-    <% else %>
-      <%= link_to "Back to Resources", resources_path, class: "btn btn-outline" %>
     <% end %>
+    <%= link_to "Back", resources_path, class: "btn" %>
   </div>
 </div>
 
-<div class="grid grid-cols-2 mb-4">
+<div class="form-grid" style="margin-bottom:14px;">
   <div class="card">
-    <h3>Resource Details</h3>
+    <h3 style="margin:0 0 12px 0;">Details</h3>
+
     <div class="form-group">
-      <label><strong>Title:</strong></label>
-      <p><%= @resource.title %></p>
+      <div class="form-label">Subject</div>
+      <div class="readonly"><%= @resource.subject.presence || "—" %></div>
     </div>
+
     <div class="form-group">
-      <label><strong>Category:</strong></label>
-      <p><%= @resource.category.humanize %></p>
+      <div class="form-label">Classroom</div>
+      <div class="readonly"><%= @resource.classroom&.name || "All Classrooms" %></div>
     </div>
+
     <div class="form-group">
-      <label><strong>Subject:</strong></label>
-      <p><%= @resource.subject %></p>
+      <div class="form-label">Uploaded by</div>
+      <div class="readonly"><%= @resource.user&.name || "System" %></div>
     </div>
+
     <div class="form-group">
-      <label><strong>Classroom:</strong></label>
-      <p><%= @resource.classroom&.name || "All Classrooms" %></p>
+      <div class="form-label">Uploaded</div>
+      <div class="readonly"><%= @resource.created_at.strftime("%B %d, %Y at %I:%M %p") %></div>
     </div>
   </div>
 
   <div class="card">
-    <h3>Description</h3>
-    <div class="form-group">
-      <p><%= @resource.description.present? ? @resource.description : "No description provided" %></p>
-    </div>
-    <div class="form-group">
-      <label><strong>Uploaded By:</strong></label>
-      <p><%= @resource.user&.name || "System" %></p>
-    </div>
-    <div class="form-group">
-      <label><strong>Upload Date:</strong></label>
-      <p><%= @resource.created_at.strftime("%B %d, %Y at %I:%M %p") %></p>
+    <h3 style="margin:0 0 12px 0;">Description</h3>
+    <div class="readonly" style="height:auto; padding:10px 12px; align-items:flex-start;">
+      <%= @resource.description.presence || "No description provided." %>
     </div>
   </div>
 </div>
 
 <div class="card">
-  <h3>Resource File</h3>
+  <h3 style="margin:0 0 12px 0;">File</h3>
+
   <% if @resource.file.attached? %>
-    <div class="d-flex justify-between items-center">
-      <div>
-        <p><strong>File:</strong> <%= @resource.file.filename %></p>
-        <p><strong>Size:</strong> <%= number_to_human_size(@resource.file.byte_size) if @resource.file.byte_size %></p>
-        <p><strong>Content Type:</strong> <%= @resource.file.content_type %></p>
+    <div class="form-grid">
+      <div class="form-group">
+        <div class="form-label">Filename</div>
+        <div class="readonly"><%= @resource.file.filename %></div>
       </div>
-      <%= link_to "Download", rails_blob_path(@resource.file, disposition: "attachment"), class: "btn btn-primary" %>
+
+      <div class="form-group">
+        <div class="form-label">Size</div>
+        <div class="readonly"><%= number_to_human_size(@resource.file.byte_size) %></div>
+      </div>
+
+      <div class="form-group">
+        <div class="form-label">Content type</div>
+        <div class="readonly"><%= @resource.file.content_type %></div>
+      </div>
+
+      <div class="form-group" style="display:flex; align-items:end; gap:10px;">
+        <%= link_to "Download",
+              rails_blob_path(@resource.file, disposition: "attachment"),
+              class: "btn btn-primary" %>
+      </div>
     </div>
   <% else %>
-    <p>No file attached to this resource.</p>
+    <div class="form-help">No file attached to this resource.</div>
   <% end %>
 </div>

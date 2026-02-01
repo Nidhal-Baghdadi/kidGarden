@@ -1,87 +1,93 @@
-<% content_for :title, @photo.title %>
+<% content_for :title, @photo.title.presence || "Photo" %>
 
-<div class="d-flex justify-between items-center mb-4">
-  <h1><%= @photo.title %></h1>
-  <%= link_to "Back to Gallery", photos_path, class: "btn btn-outline" %>
+<div class="page-header">
+  <div>
+    <h1 class="page-header__title"><%= @photo.title.presence || "Photo" %></h1>
+    <p class="page-header__subtitle">
+      <%= @photo.student&.full_name || "—" %> • Uploaded <%= @photo.created_at.strftime("%b %d, %Y") %>
+    </p>
+  </div>
+
+  <div class="page-actions">
+    <%= link_to "Back", photos_path, class: "btn" %>
+
+    <% if (current_user.admin? || current_user.teacher?) && @photo.respond_to?(:approved) && !@photo.approved? %>
+      <%= link_to "Approve", approve_photo_path(@photo),
+            data: { turbo_method: :patch, turbo_confirm: "Approve this photo?" },
+            class: "btn btn-primary" %>
+    <% end %>
+
+    <% if current_user.admin? || @photo.uploaded_by == current_user %>
+      <%= link_to "Edit", edit_photo_path(@photo), class: "btn" %>
+      <%= link_to "Delete", photo_path(@photo),
+            data: { turbo_method: :delete, turbo_confirm: "Delete this photo?" },
+            class: "btn btn-ghost" %>
+    <% end %>
+  </div>
 </div>
 
-<div class="card">
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- Photo display -->
-    <div class="lg:col-span-2">
-      <% if @photo.image.attached? %>
-        <div class="bg-gray-100 rounded-lg overflow-hidden">
-          <% safe_title = @photo.title&.to_s&.gsub('"', '&quot;')&.gsub("'", '&#39;') || 'Photo' %>
-          <%= image_tag @photo.image_url, class: "w-full max-h-[600px] object-contain", alt: safe_title %>
-        </div>
-      <% else %>
-        <div class="bg-gray-200 border-2 border-dashed rounded-xl w-full h-96 flex items-center justify-center">
-          <span class="text-gray-500">No Image Available</span>
-        </div>
-      <% end %>
+<div class="form-grid">
+  <div class="card" style="grid-column: span 2;">
+    <% if @photo.image.attached? %>
+      <%= image_tag url_for(@photo.image),
+            alt: (@photo.title.presence || "Photo"),
+            style: "width:100%; max-height: 560px; object-fit:contain; display:block; border-radius: 12px;" %>
+    <% else %>
+      <div class="readonly" style="height: 280px; justify-content:center;">No image</div>
+    <% end %>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 12px 0;">Details</h3>
+
+    <div class="form-group">
+      <div class="form-label">Student</div>
+      <div class="readonly"><%= @photo.student&.full_name || "—" %></div>
     </div>
 
-    <!-- Photo details -->
-    <div class="lg:col-span-1">
-      <div class="space-y-4">
-        <div>
-          <h3 class="text-sm font-medium text-gray-500">Student</h3>
-          <p class="text-lg font-semibold"><%= @photo.student.full_name %></p>
-        </div>
+    <div class="form-group">
+      <div class="form-label">Category</div>
+      <div class="readonly"><%= @photo.category.present? ? @photo.category.humanize : "—" %></div>
+    </div>
 
-        <div>
-          <h3 class="text-sm font-medium text-gray-500">Description</h3>
-          <p><%= @photo.description.present? ? @photo.description : "No description provided" %></p>
-        </div>
+    <div class="form-group">
+      <div class="form-label">Taken at</div>
+      <div class="readonly"><%= @photo.taken_at ? @photo.taken_at.strftime("%B %d, %Y at %I:%M %p") : "—" %></div>
+    </div>
 
-        <div>
-          <h3 class="text-sm font-medium text-gray-500">Category</h3>
-          <span class="inline-block px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
-            <%= @photo.category&.humanize %>
-          </span>
-        </div>
+    <div class="form-group">
+      <div class="form-label">Uploaded by</div>
+      <div class="readonly"><%= @photo.uploaded_by&.name || "Unknown" %></div>
+    </div>
 
-        <div>
-          <h3 class="text-sm font-medium text-gray-500">Date Taken</h3>
-          <p><%= @photo.taken_at&.strftime("%B %d, %Y at %I:%M %p") || "Not specified" %></p>
-        </div>
-
-        <div>
-          <h3 class="text-sm font-medium text-gray-500">Uploaded By</h3>
-          <p><%= @photo.uploaded_by&.name || "Unknown" %></p>
-        </div>
-
-        <div>
-          <h3 class="text-sm font-medium text-gray-500">Visibility</h3>
-          <p>
-            <% if @photo.visible_to_parents? %>
-              <span class="inline-block px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                Visible to Parents
-              </span>
-            <% else %>
-              <span class="inline-block px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">
-                Not visible to parents
-              </span>
-            <% end %>
-          </p>
-        </div>
-
-        <div>
-          <h3 class="text-sm font-medium text-gray-500">Uploaded At</h3>
-          <p><%= @photo.created_at.strftime("%B %d, %Y at %I:%M %p") %></p>
-        </div>
-
-        <% if current_user.teacher? || current_user.admin? %>
-          <div class="d-flex gap-2 mt-6">
-            <%= link_to "Edit", edit_photo_path(@photo), class: "btn btn-outline flex-1" %>
-            <%= link_to "Delete", @photo,
-                        data: {
-                          turbo_method: :delete,
-                          turbo_confirm: "Are you sure you want to delete this photo?"
-                        },
-                        class: "btn btn-danger flex-1" %>
-          </div>
+    <div class="form-group">
+      <div class="form-label">Visibility</div>
+      <div class="readonly">
+        <% if @photo.visible_to_parents? %>
+          <span class="status-badge status-active">Visible to parents</span>
+        <% else %>
+          <span class="status-badge">Staff only</span>
         <% end %>
+      </div>
+    </div>
+
+    <% if @photo.respond_to?(:approved) %>
+      <div class="form-group">
+        <div class="form-label">Approval</div>
+        <div class="readonly">
+          <% if @photo.approved? %>
+            <span class="status-badge status-paid">Approved</span>
+          <% else %>
+            <span class="status-badge status-warning">Pending</span>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <div class="form-group">
+      <div class="form-label">Description</div>
+      <div class="readonly" style="height:auto; padding:10px 12px; align-items:flex-start;">
+        <%= @photo.description.presence || "—" %>
       </div>
     </div>
   </div>

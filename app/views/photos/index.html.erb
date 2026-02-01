@@ -1,106 +1,162 @@
-<% content_for :title, "Photo Gallery" %>
+<% content_for :title, "Photos" %>
 
-<div class="d-flex justify-between items-center mb-4">
-  <h1>Photo Gallery</h1>
-  <% if current_user.teacher? || current_user.admin? %>
-    <%= link_to "Upload Photo", new_photo_path, class: "btn btn-primary" %>
-  <% end %>
+<div class="page-header">
+  <div>
+    <h1 class="page-header__title">Photos</h1>
+    <p class="page-header__subtitle">Browse, filter, and manage uploaded photos.</p>
+  </div>
+
+  <div class="page-actions">
+    <%= link_to "Gallery", gallery_photos_path, class: "btn" %>
+
+    <% if current_user.teacher? || current_user.admin? %>
+      <%= link_to "Upload Photo", new_photo_path, class: "btn btn-primary" %>
+    <% end %>
+  </div>
 </div>
 
-<!-- Filters -->
-<div class="card mb-4">
-  <%= form_with url: photos_path, method: :get, local: true, class: "form" do |form| %>
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <% if current_user.teacher? || current_user.admin? %>
-        <div class="form-group">
-          <%= form.label :student_id, "Student", class: "form-label" %>
-          <%= form.select :student_id,
-                          options_from_collection_for_select(@accessible_students, :id, :full_name, params[:student_id]),
-                          { prompt: "All Students" },
-                          { class: "form-control" } %>
-        </div>
-      <% end %>
+<div class="card" style="margin-bottom:14px;">
+  <%= form_with url: photos_path, method: :get, local: true do |form| %>
+    <div class="form-grid">
+      <div class="form-group">
+        <%= form.label :student_id, "Student", class: "form-label" %>
+        <%= form.select :student_id,
+              options_from_collection_for_select(@accessible_students, :id, :full_name, params[:student_id]),
+              { prompt: "All students" },
+              { class: "form-control" } %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :classroom_id, "Classroom", class: "form-label" %>
+        <%= form.select :classroom_id,
+              options_from_collection_for_select(@accessible_classrooms, :id, :name, params[:classroom_id]),
+              { prompt: "All classrooms" },
+              { class: "form-control" } %>
+      </div>
 
       <div class="form-group">
         <%= form.label :category, "Category", class: "form-label" %>
         <%= form.select :category,
-                        options_for_select([
-                          ['All Categories', ''],
-                          ['Activities', 'activity'],
-                          ['Events', 'event'],
-                          ['Milestones', 'milestone'],
-                          ['Daily Life', 'daily_life']
-                        ], params[:category]),
-                        {},
-                        { class: "form-control" } %>
+              options_for_select(
+                [
+                  ["All categories", ""],
+                  ["Activity", "activity"],
+                  ["Event", "event"],
+                  ["Milestone", "milestone"],
+                  ["Daily Life", "daily_life"]
+                ],
+                params[:category]
+              ),
+              {},
+              { class: "form-control" } %>
       </div>
 
       <div class="form-group">
-        <%= form.label :start_date, "From Date", class: "form-label" %>
+        <%= form.label :start_date, "From", class: "form-label" %>
         <%= form.date_field :start_date, value: params[:start_date], class: "form-control" %>
       </div>
 
       <div class="form-group">
-        <%= form.label :end_date, "To Date", class: "form-label" %>
+        <%= form.label :end_date, "To", class: "form-label" %>
         <%= form.date_field :end_date, value: params[:end_date], class: "form-control" %>
       </div>
     </div>
 
-    <div class="mt-4">
+    <div class="page-actions" style="justify-content:flex-end; margin-top: 10px;">
+      <%= link_to "Clear", photos_path, class: "btn btn-ghost" %>
       <%= form.submit "Filter", class: "btn btn-primary" %>
-      <%= link_to "Clear", photos_path, class: "btn btn-outline" %>
-      <%= link_to "Gallery View", gallery_photos_path, class: "btn btn-outline ml-2" %>
     </div>
   <% end %>
 </div>
 
-<!-- Gallery view -->
-<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-  <% @photos.each do |photo| %>
-    <div class="card overflow-hidden">
-      <% if photo.image.attached? && photo.medium_image_url.present? %>
-        <% safe_title = photo.title&.to_s&.gsub('"', '&quot;')&.gsub("'", '&#39;') || 'Photo' %>
-        <%= image_tag photo.medium_image_url, class: "w-full h-48 object-cover", alt: safe_title %>
-      <% else %>
-        <div class="bg-gray-200 border-2 border-dashed rounded-xl w-full h-48 flex items-center justify-center">
-          <span class="text-gray-500">No Image</span>
-        </div>
-      <% end %>
+<div class="card">
+  <% if @photos.any? %>
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Photo</th>
+            <th>Student</th>
+            <th>Category</th>
+            <th>Visibility</th>
+            <th>Approval</th>
+            <th>Date</th>
+            <th class="no-sort">Actions</th>
+          </tr>
+        </thead>
 
-      <div class="p-4">
-        <h3 class="font-semibold text-lg truncate"><%= photo.title %></h3>
-        <p class="text-sm text-gray-600 mt-1"><%= photo.student.full_name %></p>
-        <p class="text-xs text-gray-500 mt-1"><%= photo.created_at.strftime("%B %d, %Y") %></p>
+        <tbody>
+          <% @photos.each do |photo| %>
+            <tr>
+              <td style="width:110px;">
+                <% if photo.image.attached? %>
+                  <%= link_to photo_path(photo) do %>
+                    <%= image_tag url_for(photo.image.variant(resize_to_fill: [96, 72])),
+                                  alt: photo.title.to_s,
+                                  style: "border-radius: 10px; display:block; border:1px solid var(--border);" %>
+                  <% end %>
+                <% else %>
+                  <span class="form-help">—</span>
+                <% end %>
+              </td>
 
-        <% if photo.description.present? %>
-          <p class="text-sm mt-2 truncate"><%= photo.description %></p>
-        <% end %>
+              <td>
+                <div style="font-weight:700;"><%= photo.student&.full_name || "—" %></div>
+                <div class="form-help" style="margin:4px 0 0 0;">
+                  Uploaded by <%= photo.uploaded_by&.name || "Unknown" %>
+                </div>
+              </td>
 
-        <div class="mt-3 flex justify-between items-center">
-          <span class="text-xs px-2 py-1 rounded-full bg-gray-100">
-            <%= photo.category&.humanize %>
-          </span>
+              <td><%= photo.category.present? ? photo.category.humanize : "—" %></td>
 
-          <% if current_user.teacher? || current_user.admin? %>
-            <%= link_to "View", photo, class: "btn btn-outline btn-sm" %>
+              <td>
+                <% if photo.visible_to_parents? %>
+                  <span class="status-badge status-active">Parents</span>
+                <% else %>
+                  <span class="status-badge">Staff only</span>
+                <% end %>
+              </td>
+
+              <td>
+                <% if photo.respond_to?(:approved) && photo.approved? %>
+                  <span class="status-badge status-paid">Approved</span>
+                <% else %>
+                  <span class="status-badge status-warning">Pending</span>
+                <% end %>
+              </td>
+
+              <td><%= photo.created_at.strftime("%b %d, %Y") %></td>
+
+              <td>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  <%= link_to "View", photo_path(photo), class: "btn btn-sm" %>
+
+                  <% if current_user.admin? || photo.uploaded_by == current_user %>
+                    <%= link_to "Edit", edit_photo_path(photo), class: "btn btn-sm" %>
+                    <%= link_to "Delete", photo_path(photo),
+                          data: { turbo_method: :delete, turbo_confirm: "Delete this photo?" },
+                          class: "btn btn-ghost btn-sm" %>
+                  <% end %>
+
+                  <% if (current_user.admin? || current_user.teacher?) && photo.respond_to?(:approved) && !photo.approved? %>
+                    <%= link_to "Approve", approve_photo_path(photo),
+                          data: { turbo_method: :patch, turbo_confirm: "Approve this photo?" },
+                          class: "btn btn-primary btn-sm" %>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
           <% end %>
-        </div>
-      </div>
+        </tbody>
+      </table>
     </div>
-  <% end %>
-</div>
 
-<% if @photos.empty? %>
-  <div class="text-center py-12">
-    <svg class="mx-auto purpose-icon text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-    </svg>
-    <h3 class="mt-2 text-sm font-medium">No photos</h3>
-    <p class="mt-1 text-sm text-gray-500">Get started by uploading your first photo.</p>
-    <% if current_user.teacher? || current_user.admin? %>
-      <div class="mt-6">
-        <%= link_to "Upload Photo", new_photo_path, class: "btn btn-primary" %>
+    <% if defined?(paginate) && @photos.respond_to?(:current_page) %>
+      <div style="margin-top:14px;">
+        <%= paginate @photos %>
       </div>
     <% end %>
-  </div>
-<% end %>
+  <% else %>
+    <div class="form-help">No photos found.</div>
+  <% end %>
+</div>

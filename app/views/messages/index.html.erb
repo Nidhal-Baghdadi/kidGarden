@@ -1,40 +1,52 @@
 <% content_for :title, "Messages" %>
+<% other = @conversation.other_participant(current_user) %>
 
-<div class="d-flex justify-between items-center mb-4">
+<div class="page-header">
   <div>
-    <h1><%= @conversation.subject %></h1>
-    <p class="text-sm text-gray-500 mt-1">With <%= @conversation.other_participant(current_user)&.name %></p>
+    <h1 class="page-header__title"><%= @conversation.subject.presence || "Conversation" %></h1>
+    <p class="page-header__subtitle">With <%= other&.name || "Unknown" %></p>
   </div>
-  <%= link_to "Back to Conversations", user_conversations_path, class: "btn btn-outline" %>
+
+  <div class="page-actions">
+    <%= link_to "Back", user_conversations_path, class: "btn" %>
+  </div>
 </div>
 
-<div class="card" style="min-height: 500px;">
-  <div id="messages-container" class="p-4" style="height: 400px; overflow-y: auto;">
+<div class="card" style="padding:0;" data-conversation-id="<%= @conversation.id %>">
+  <div id="messages-container" class="messages-thread" data-autoscroll="true">
     <% @messages.each do |message| %>
-      <div class="message-bubble <%= message.sender == current_user ? 'sender-message' : 'recipient-message' %> mb-4">
-        <div class="message-header d-flex items-center mb-1">
-          <span class="font-medium"><%= message.sender.name %></span>
-          <span class="text-xs text-gray-500 ml-2"><%= message.created_at.strftime("%I:%M %p") %></span>
-          <% if message.sender == current_user %>
-            <span class="text-xs text-gray-500 ml-2">
-              <% if message.read_at %>
-                <i class="fas fa-check-double text-blue-500"></i> Read
-              <% else %>
-                <i class="fas fa-check"></i> Sent
-              <% end %>
+      <% mine = (message.sender_id == current_user.id) %>
+      <% read_at_for_other = mine && other ? message.read_status_for_user(other) : nil %>
+
+      <div class="msg <%= mine ? "msg--mine" : "msg--theirs" %>">
+        <div class="msg__meta">
+          <span class="msg__name"><%= message.sender&.name || "Unknown" %></span>
+          <span class="msg__time"><%= message.created_at.strftime("%I:%M %p") %></span>
+
+          <% if mine %>
+            <span class="msg__status">
+              • <%= read_at_for_other.present? ? "Read" : "Sent" %>
             </span>
           <% end %>
         </div>
-        <div class="message-content p-3 rounded-lg max-w-[70%] <%= message.sender == current_user ? 'bg-primary text-primary-foreground ml-auto' : 'bg-gray-100 text-gray-800' %>">
+
+        <div class="msg__bubble">
           <%= simple_format(message.content) %>
-          <% if message.sender == current_user %>
-            <div class="text-xs mt-1 text-right">
-              <%= link_to "Delete", message,
-                          data: {
-                            turbo_method: :delete,
-                            turbo_confirm: "Are you sure you want to delete this message?"
-                          },
-                          class: "text-red-500 hover:text-red-700" %>
+
+          <% if message.attachments.attached? %>
+            <div class="msg__attachments">
+              <% message.attachments.each do |file| %>
+                <%= link_to file.filename.to_s, url_for(file), class: "msg__file", target: "_blank", rel: "noopener" %>
+              <% end %>
+            </div>
+          <% end %>
+
+          <% if mine || current_user.admin? %>
+            <div class="msg__actions">
+              <%= link_to "Delete",
+                    message,
+                    data: { turbo_method: :delete, turbo_confirm: "Delete this message?" },
+                    class: "msg__delete" %>
             </div>
           <% end %>
         </div>
@@ -42,50 +54,38 @@
     <% end %>
   </div>
 
-  <div class="message-form-container p-4 border-t">
-    <%= form_with model: @message, url: conversation_messages_path(@conversation), method: :post, local: true, class: "d-flex" do |form| %>
-      <div class="flex-grow mr-2">
-        <%= form.text_area :content, placeholder: "Type your message...", class: "form-control", rows: 2 %>
+  <div class="composer">
+    <% if @message.errors.any? %>
+      <div class="alert alert--error" style="margin:0 0 12px 0;">
+        <strong><%= pluralize(@message.errors.count, "error") %> prevented sending:</strong>
+        <ul style="margin:8px 0 0 18px;">
+          <% @message.errors.full_messages.each do |m| %>
+            <li><%= m %></li>
+          <% end %>
+        </ul>
       </div>
-      <div class="d-flex flex-col">
-        <%= form.submit "Send", class: "btn btn-primary mb-2" %>
-        <%= link_to "Cancel", user_conversations_path, class: "btn btn-outline" %>
+    <% end %>
+
+    <%= form_with model: @message, url: conversation_messages_path(@conversation), local: true do |form| %>
+      <div class="composer__grid">
+        <div class="form-group" style="margin:0;">
+          <%= form.label :content, "Message", class: "form-label" %>
+          <%= form.text_area :content, placeholder: "Type your message…", class: "form-control", rows: 2 %>
+
+          <div style="margin-top:10px;">
+            <%= form.label :attachments, "Attachments", class: "form-label" %>
+            <%= form.file_field :attachments, multiple: true, class: "form-control" %>
+            <div class="form-help" style="margin-top:6px;">
+              You can attach multiple files.
+            </div>
+          </div>
+        </div>
+
+        <div class="composer__actions">
+          <%= form.submit "Send", class: "btn btn-primary" %>
+          <%= link_to "Cancel", user_conversations_path, class: "btn btn-ghost" %>
+        </div>
       </div>
     <% end %>
   </div>
 </div>
-
-<style>
-  .sender-message {
-    text-align: right;
-  }
-
-  .recipient-message {
-    text-align: left;
-  }
-
-  .message-bubble {
-    max-width: 80%;
-  }
-
-  .sender-message .message-content {
-    background-color: var(--primary);
-    color: var(--primary-foreground);
-    border-bottom-right-radius: 0 !important;
-  }
-
-  .recipient-message .message-content {
-    background-color: var(--secondary);
-    color: var(--secondary-foreground);
-    border-bottom-left-radius: 0 !important;
-  }
-
-  #messages-container {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .message-form-container {
-    background-color: var(--card);
-  }
-</style>

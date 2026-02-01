@@ -1,47 +1,65 @@
 <% content_for :title, "Fee Details" %>
 
-<div class="d-flex justify-between items-center mb-4">
-  <h1>Fee Record</h1>
+<div class="page-header">
   <div>
-    <%= link_to "Edit", edit_fee_path(@fee), class: "btn btn-primary" %>
-    <%= link_to "Back to Fees", fees_path, class: "btn btn-outline", style: "margin-left: 0.5rem;" %>
+    <h1 class="page-header__title">Fee Record</h1>
+    <p class="page-header__subtitle"><%= @fee.student&.full_name || "Student" %></p>
+  </div>
+
+  <div class="page-actions">
+    <% if current_user.admin? || current_user.teacher? %>
+      <%= link_to "Edit", edit_fee_path(@fee), class: "btn btn-primary" %>
+    <% end %>
+    <%= link_to "Back", fees_path, class: "btn btn-ghost" %>
   </div>
 </div>
 
-<div class="grid grid-cols-2 mb-4">
+<div class="form-grid" style="margin-bottom:14px;">
   <div class="card">
-    <h3>Fee Information</h3>
+    <h3 style="margin:0 0 12px 0;">Fee</h3>
+
     <div class="form-group">
-      <label><strong>Student:</strong></label>
-      <p><%= @fee.student&.first_name %> <%= @fee.student&.last_name %></p>
+      <div class="form-label">Student</div>
+      <div class="readonly"><%= @fee.student&.full_name || "—" %></div>
     </div>
-    <div class="form-group">
-      <label><strong>Amount:</strong></label>
-      <p>$<%= "%.2f" % @fee.amount %></p>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <div class="form-label">Amount</div>
+        <div class="readonly"><%= number_to_currency(@fee.amount || 0) %></div>
+      </div>
+
+      <div class="form-group">
+        <div class="form-label">Due date</div>
+        <div class="readonly"><%= @fee.due_date&.strftime("%B %d, %Y") || "—" %></div>
+      </div>
     </div>
+
     <div class="form-group">
-      <label><strong>Due Date:</strong></label>
-      <p><%= @fee.due_date.strftime("%B %d, %Y") %></p>
-    </div>
-    <div class="form-group">
-      <label><strong>Status:</strong></label>
-      <p>
-        <span class="status-badge status-<%= @fee.status %>">
-          <%= @fee.status.humanize %>
-        </span>
-      </p>
+      <div class="form-label">Status</div>
+      <div class="readonly">
+        <% if @fee.status.present? %>
+          <span class="status-badge status-<%= @fee.status %>"><%= @fee.status.humanize %></span>
+        <% else %>
+          —
+        <% end %>
+      </div>
     </div>
   </div>
 
   <div class="card">
-    <h3>Additional Information</h3>
+    <h3 style="margin:0 0 12px 0;">Details</h3>
+
     <div class="form-group">
-      <label><strong>Receipt Number:</strong></label>
-      <p><%= @fee.receipt_number || "N/A" %></p>
+      <div class="form-label">Receipt #</div>
+      <div class="readonly"><%= @fee.receipt_number.presence || "—" %></div>
     </div>
+
     <div class="form-group">
-      <label><strong>Description:</strong></label>
-      <p><%= @fee.description.present? ? @fee.description : "None" %></p>
+      <div class="form-label">Description</div>
+      <div class="readonly" style="height:auto; padding:10px 12px; align-items:flex-start;">
+        <%= @fee.description.presence || "—" %>
+      </div>
     </div>
   </div>
 </div>

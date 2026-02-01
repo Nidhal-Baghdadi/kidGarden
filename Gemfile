@@ -25,6 +25,9 @@ gem "tzinfo-data", platforms: %i[ windows jruby ]
 
 # Use Sidekiq for background job processing
 gem "sidekiq"
+gem "redis"
+
+gem "connection_pool", "~> 2.5", "< 3"
 
 # Use the database-backed adapters for Rails.cache, Active Job, and Action Cable
 gem "solid_cache"

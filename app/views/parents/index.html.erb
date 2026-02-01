@@ -1,67 +1,85 @@
 <% content_for :title, "Parents" %>
 
-<div class="d-flex justify-between items-center mb-4">
-  <h1>Parents</h1>
-  <% if current_user.admin? %>
-    <%= link_to "New Parent", new_parent_path, class: "btn btn-primary" %>
-  <% end %>
+<div class="page-header">
+  <div>
+    <h1 class="page-header__title">Parents</h1>
+    <p class="page-header__subtitle">Manage parent accounts and linked children</p>
+  </div>
+
+  <div class="page-actions">
+    <% if current_user.admin? %>
+      <%= link_to "New Parent", new_parent_path, class: "btn btn-primary" %>
+    <% end %>
+  </div>
 </div>
 
 <div class="card">
-  <div class="table-responsive">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Phone</th>
-          <th>Children</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @parents.each do |parent| %>
+  <% if @parents.any? %>
+    <div class="table-container">
+      <table class="table">
+        <thead>
           <tr>
-            <td><%= parent.name %></td>
-            <td><%= parent.email %></td>
-            <td><%= parent.phone || "N/A" %></td>
-            <td>
-              <% if parent.students_as_parent.any? %>
-                <ul class="list-disc pl-4">
-                  <% parent.students_as_parent.limit(3).each do |student| %>
-                    <li><%= student.first_name %> <%= student.last_name %></li>
-                  <% end %>
-                  <% if parent.students_as_parent.count > 3 %>
-                    <li>... and <%= parent.students_as_parent.count - 3 %> more</li>
-                  <% end %>
-                </ul>
-              <% else %>
-                No children assigned
-              <% end %>
-            </td>
-            <td>
-              <%= link_to "View", parent, class: "btn btn-outline btn-sm" %>
-              <% if current_user.admin? %>
-                <%= link_to "Edit", edit_parent_path(parent), class: "btn btn-outline btn-sm ml-2" %>
-                <%= link_to "Delete", parent, method: :delete, class: "btn btn-danger btn-sm ml-2",
-                            confirm: "Are you sure?", style: "margin-left: 0.25rem;" %>
-              <% end %>
-            </td>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Children</th>
+            <th class="no-sort">Actions</th>
           </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
+        </thead>
 
-  <% if @parents.empty? %>
-    <div class="text-center py-8">
-      <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-      </svg>
-      <h3 class="mt-2 text-sm font-medium">No parents</h3>
-      <p class="mt-1 text-sm text-gray-500">Get started by creating a new parent account.</p>
+        <tbody>
+          <% @parents.each do |parent| %>
+            <tr>
+              <td><%= parent.name %></td>
+              <td><%= parent.email %></td>
+              <td><%= parent.phone.presence || "—" %></td>
+
+              <td>
+                <% if parent.students_as_parent.any? %>
+                  <div style="display:flex; flex-direction:column; gap:4px;">
+                    <% parent.students_as_parent.limit(3).each do |student| %>
+                      <div><%= student.first_name %> <%= student.last_name %></div>
+                    <% end %>
+
+                    <% if parent.students_as_parent.count > 3 %>
+                      <div class="form-help">
+                        …and <%= parent.students_as_parent.count - 3 %> more
+                      </div>
+                    <% end %>
+                  </div>
+                <% else %>
+                  <span class="form-help">No children assigned</span>
+                <% end %>
+              </td>
+
+              <td>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  <%= link_to "View", parent, class: "btn btn-sm" %>
+
+                  <% if current_user.admin? %>
+                    <%= link_to "Edit", edit_parent_path(parent), class: "btn btn-sm" %>
+                    <%= link_to "Delete", parent,
+                        method: :delete,
+                        data: { confirm: "Are you sure?" },
+                        class: "btn btn-ghost btn-sm" %>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+  <% else %>
+    <div style="text-align:center; padding: 28px 12px;">
+      <div style="font-weight: 750; font-size: 1.05rem;">No parents</div>
+      <div class="form-help" style="margin-top: 6px;">
+        Get started by creating a new parent account.
+      </div>
+
       <% if current_user.admin? %>
-        <div class="mt-6">
+        <div style="margin-top: 14px;">
           <%= link_to "Add Parent", new_parent_path, class: "btn btn-primary" %>
         </div>
       <% end %>

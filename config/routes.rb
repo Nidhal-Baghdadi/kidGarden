@@ -47,9 +47,10 @@ Rails.application.routes.draw do
   resources :calendar, only: [:index]
 
   # Messaging system
-  resources :conversations, only: [:show, :create] do
+  resources :conversations, only: [:show, :create], constraints: { id: /\d+/ } do
     resources :messages, only: [:index, :create]
   end
+
   resources :messages, only: [:show, :destroy]
   get 'conversations', to: 'messages#conversations', as: 'user_conversations'
   get 'conversations/new', to: 'messages#new_conversation', as: 'new_user_conversation'
@@ -72,6 +73,8 @@ Rails.application.routes.draw do
       get :gallery
     end
   end
+
+  mount ActionCable.server => "/cable"
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 

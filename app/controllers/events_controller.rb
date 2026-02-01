@@ -1,11 +1,23 @@
 class EventsController < ApplicationController
+  before_action :authenticate_user!
   before_action :set_event, only: [:show, :edit, :update, :destroy]
 
   def index
-    respond_to do |format|
-      format.html
-      format.json { render json: EventsDatatable.new(params, view_context: view_context) }
-    end
+    @events =
+      if current_user.admin? || current_user.staff?
+        Event.includes(:organizer).order(start_time: :desc)
+      elsif current_user.teacher?
+        # If teachers should only see their events, uncomment the next line and remove the "all events" line
+        # Event.where(organizer_id: current_user.id).includes(:organizer).order(start_time: :desc)
+
+        # Teachers can see all events (common for school calendar)
+        Event.includes(:organizer).order(start_time: :desc)
+      elsif current_user.parent?
+        # Parents can see school-wide events
+        Event.includes(:organizer).order(start_time: :desc)
+      else
+        Event.none
+      end
   end
 
   def show
@@ -19,9 +31,9 @@ class EventsController < ApplicationController
     @event = Event.new(event_params)
 
     if @event.save
-      redirect_to @event, notice: 'Event was successfully created.'
+      redirect_to @event, notice: "Event was successfully created."
     else
-      render :new
+      render :new, status: :unprocessable_entity
     end
   end
 
@@ -30,15 +42,15 @@ class EventsController < ApplicationController
 
   def update
     if @event.update(event_params)
-      redirect_to @event, notice: 'Event was successfully updated.'
+      redirect_to @event, notice: "Event was successfully updated."
     else
-      render :edit
+      render :edit, status: :unprocessable_entity
     end
   end
 
   def destroy
     @event.destroy
-    redirect_to events_url, notice: 'Event was successfully deleted.'
+    redirect_to events_path, notice: "Event was successfully deleted."
   end
 
   private
