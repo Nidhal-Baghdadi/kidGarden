@@ -1,0 +1,79 @@
+<% content_for :title, "Upload Photo" %>
+
+<div class="d-flex justify-between items-center mb-4">
+  <h1>Upload Photo</h1>
+  <%= link_to "Back to Gallery", photos_path, class: "btn btn-outline" %>
+</div>
+
+<div class="card">
+  <%= form_with model: @photo, local: true, multipart: true, class: "form" do |form| %>
+    <% if @photo.errors.any? %>
+      <div class="alert alert-error">
+        <h4><%= pluralize(@photo.errors.count, "error") %> prohibited this photo from being saved:</h4>
+        <ul>
+          <% @photo.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="form-group">
+        <%= form.label :student_id, "Student", class: "form-label" %>
+        <%= form.select :student_id, 
+                        options_from_collection_for_select(@students, :id, :full_name), 
+                        { prompt: "Select Student" }, 
+                        { class: "form-control" } %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :title, class: "form-label" %>
+        <%= form.text_field :title, class: "form-control" %>
+      </div>
+
+      <div class="form-group md:col-span-2">
+        <%= form.label :description, class: "form-label" %>
+        <%= form.text_area :description, rows: 3, class: "form-control" %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :category, "Category", class: "form-label" %>
+        <%= form.select :category, 
+                        options_for_select([
+                          ['Select Category', nil],
+                          ['Activity', 'activity'],
+                          ['Event', 'event'],
+                          ['Milestone', 'milestone'],
+                          ['Daily Life', 'daily_life']
+                        ], @photo.category), 
+                        {}, 
+                        { class: "form-control" } %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :taken_at, "Date Taken", class: "form-label" %>
+        <%= form.datetime_local_field :taken_at, value: @photo.taken_at&.strftime('%Y-%m-%dT%H:%M'), class: "form-control" %>
+      </div>
+
+      <div class="form-group md:col-span-2">
+        <%= form.label :image, "Photo", class: "form-label" %>
+        <%= form.file_field :image, class: "form-control", accept: "image/*" %>
+        <p class="text-sm text-gray-500 mt-1">Accepted formats: JPG, PNG, GIF. Max size: 5MB.</p>
+      </div>
+
+      <div class="form-group md:col-span-2">
+        <label class="form-switch">
+          <%= form.check_box :visible_to_parents, class: "form-checkbox" %>
+          <span class="form-label">Visible to Parents</span>
+        </label>
+        <p class="text-sm text-gray-500 mt-1">If checked, parents will be able to see this photo.</p>
+      </div>
+    </div>
+
+    <div class="d-flex justify-between mt-6">
+      <%= form.submit "Upload Photo", class: "btn btn-primary" %>
+      <%= link_to "Cancel", photos_path, class: "btn btn-outline" %>
+    </div>
+  <% end %>
+</div>

@@ -1,0 +1,84 @@
+<% content_for :title, "Classroom Details" %>
+
+<div class="d-flex justify-between items-center mb-4">
+  <h1>Classroom: <%= @classroom.name %></h1>
+  <div>
+    <%= link_to "Edit", edit_classroom_path(@classroom), class: "btn btn-primary" %>
+    <%= link_to "Back to Classrooms", classrooms_path, class: "btn btn-outline", style: "margin-left: 0.5rem;" %>
+  </div>
+</div>
+
+<div class="grid grid-cols-2 mb-4">
+  <div class="card">
+    <h3>Classroom Information</h3>
+    <div class="form-group">
+      <label><strong>Name:</strong></label>
+      <p><%= @classroom.name %></p>
+    </div>
+    <div class="form-group">
+      <label><strong>Capacity:</strong></label>
+      <p><%= @classroom.capacity %></p>
+    </div>
+    <div class="form-group">
+      <label><strong>Teacher:</strong></label>
+      <p><%= @classroom.teacher&.name || "Unassigned" %></p>
+    </div>
+    <div class="form-group">
+      <label><strong>Student Count:</strong></label>
+      <p><%= @classroom.students.count %> / <%= @classroom.capacity %></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Additional Information</h3>
+    <div class="form-group">
+      <label><strong>Description:</strong></label>
+      <p><%= @classroom.description.present? ? @classroom.description : "Not provided" %></p>
+    </div>
+    <div class="form-group">
+      <label><strong>Schedule:</strong></label>
+      <p><%= @classroom.schedule.present? ? @classroom.schedule : "Not provided" %></p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="d-flex justify-between items-center mb-3">
+    <h3>Students in this Classroom</h3>
+    <%= link_to "Add Student", new_student_path, class: "btn btn-primary" %>
+  </div>
+  <% if @classroom.students.any? %>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Status</th>
+            <th>Gender</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @classroom.students.each do |student| %>
+            <tr>
+              <td><%= student.id %></td>
+              <td><%= student.first_name %> <%= student.last_name %></td>
+              <td>
+                <span class="status-badge status-<%= student.status %>">
+                  <%= student.status.humanize %>
+                </span>
+              </td>
+              <td><%= student.gender.humanize %></td>
+              <td>
+                <%= link_to "View", student, class: "btn btn-outline" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p>No students are currently assigned to this classroom.</p>
+  <% end %>
+</div>

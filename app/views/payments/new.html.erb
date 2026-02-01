@@ -1,0 +1,10 @@
+<% content_for :title, "New Payment" %>
+
+<div class="d-flex justify-between items-center mb-4">
+  <h1>Record New Payment</h1>
+  <%= link_to "Back to Payments", payments_path, class: "btn btn-outline" %>
+</div>
+
+<div class="card">
+  <%= render 'form' %>
+</div>

@@ -1,0 +1,51 @@
+<div class="card">
+  <div class="page-header">
+    <div>
+      <h3 class="page-header__title">Users</h3>
+      <p class="page-header__subtitle">Manage access, roles, and approval status.</p>
+    </div>
+
+    <div class="page-actions">
+      <%= link_to "New user", new_user_path, class: "btn btn-primary" %>
+    </div>
+  </div>
+
+  <div class="table-container">
+    <table class="table" id="users-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Approved</th>
+          <th class="no-sort">Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("turbo:load", function() {
+    if (!window.jQuery) return;
+
+    const $table = $('#users-table');
+
+    // Prevent double init with Turbo
+    if ($.fn.dataTable.isDataTable($table)) {
+      $table.DataTable().ajax.reload(null, false);
+      return;
+    }
+
+    $table.DataTable({
+      processing: true,
+      serverSide: true,
+      ajax: "<%= users_path(format: :json) %>",
+      pageLength: 10,
+      order: [[0, "asc"]],
+      columnDefs: [{ targets: "no-sort", orderable: false }]
+    });
+  });
+</script>

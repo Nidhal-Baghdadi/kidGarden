@@ -1,0 +1,49 @@
+<div class="card">
+  <div class="page-header">
+    <div>
+      <h3 class="page-header__title">User Details</h3>
+      <p class="page-header__subtitle">View user profile, role, and access status.</p>
+    </div>
+
+    <div class="page-actions">
+      <%= link_to "Back", users_path, class: "btn" %>
+      <%= link_to "Edit", edit_user_path(@user), class: "btn btn-primary" %>
+    </div>
+  </div>
+
+  <div class="form-grid">
+    <div class="form-group">
+      <label class="form-label">Name</label>
+      <div class="readonly"><%= @user.name %></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <div class="readonly"><%= @user.email %></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Role</label>
+      <div class="readonly">
+        <span class="status-badge"><%= @user.role.humanize %></span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Status</label>
+      <div class="readonly">
+        <span class="status-badge status-<%= @user.status %>"><%= @user.status.humanize %></span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Approved</label>
+      <div class="readonly"><%= @user.approved? ? "Yes" : "No" %></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Created</label>
+      <div class="readonly"><%= @user.created_at.strftime("%B %d, %Y %H:%M") %></div>
+    </div>
+  </div>
+</div>

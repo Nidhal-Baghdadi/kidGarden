@@ -1,0 +1,36 @@
+<% content_for :title, "Attendance" %>
+
+<div class="d-flex justify-between items-center mb-4">
+  <h1>Attendance Records</h1>
+  <%= link_to "New Attendance", new_attendance_path, class: "btn btn-primary" %>
+</div>
+
+<div class="card">
+  <div class="table-container">
+    <table class="table" id="attendances-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Student</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Notes</th>
+          <th>Taken By</th>
+          <th class="no-sort">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  $(document).ready(function() {
+    $('#attendances-table').DataTable({
+      "processing": true,
+      "serverSide": true,
+      "ajax": "<%= attendances_path(format: :json) %>"
+    });
+  });
+</script>

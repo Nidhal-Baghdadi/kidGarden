@@ -1,0 +1,35 @@
+<% content_for :title, "Classrooms" %>
+
+<div class="d-flex justify-between items-center mb-4">
+  <h1>Classrooms</h1>
+  <%= link_to "New Classroom", new_classroom_path, class: "btn btn-primary" %>
+</div>
+
+<div class="card">
+  <div class="table-container">
+    <table class="table" id="classrooms-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Teacher</th>
+          <th>Capacity</th>
+          <th>Student Count</th>
+          <th class="no-sort">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  $(document).ready(function() {
+    $('#classrooms-table').DataTable({
+      "processing": true,
+      "serverSide": true,
+      "ajax": "<%= classrooms_path(format: :json) %>"
+    });
+  });
+</script>

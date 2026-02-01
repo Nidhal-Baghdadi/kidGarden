@@ -1,0 +1,39 @@
+<% content_for :title, "Students" %>
+
+<div class="d-flex justify-between items-center mb-6">
+  <div>
+    <h1 class="text-2xl font-bold">Students</h1>
+    <p class="text-sm text-gray-500 mt-1">Manage all student records</p>
+  </div>
+  <%= link_to "New Student", new_student_path, class: "btn btn-primary" %>
+</div>
+
+<div class="card">
+  <div class="table-container">
+    <table class="table" id="students-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Student</th>
+          <th>Classroom</th>
+          <th>Status</th>
+          <th>Gender</th>
+          <th>Enrollment</th>
+          <th class="no-sort">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  $(document).ready(function() {
+    $('#students-table').DataTable({
+      "processing": true,
+      "serverSide": true,
+      "ajax": "<%= students_path(format: :json) %>"
+    });
+  });
+</script>

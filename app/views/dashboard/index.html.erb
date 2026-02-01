@@ -1,0 +1,133 @@
+<% content_for :title, "Dashboard" %>
+
+<div style="display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:16px;">
+  <div>
+    <div style="font-size:0.9rem; color:var(--muted); font-weight:600;">Welcome back</div>
+    <div style="font-size:1.6rem; font-weight:700; letter-spacing:-0.02em;"><%= current_user.name %></div>
+  </div>
+  <div style="display:flex; gap:10px;">
+    <%= link_to "Students", students_path, class: "btn" %>
+    <%= link_to "Attendance", attendances_path, class: "btn btn-primary" %>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:14px; margin-bottom:14px;">
+  <div class="card">
+    <div style="color:var(--muted); font-size:0.85rem; font-weight:650;">Total Students</div>
+    <div style="font-size:1.6rem; font-weight:750; margin-top:6px;"><%= Student.count %></div>
+    <div style="color:var(--muted); margin-top:4px;">Enrolled: <%= Student.where(status: 'enrolled').count %></div>
+  </div>
+
+  <div class="card">
+    <div style="color:var(--muted); font-size:0.85rem; font-weight:650;">Active Classrooms</div>
+    <div style="font-size:1.6rem; font-weight:750; margin-top:6px;"><%= Classroom.count %></div>
+    <div style="color:var(--muted); margin-top:4px;">Teachers: <%= User.where(role: 'teacher').count %></div>
+  </div>
+
+  <div class="card">
+    <div style="color:var(--muted); font-size:0.85rem; font-weight:650;">Today’s Attendance</div>
+    <div style="font-size:1.6rem; font-weight:750; margin-top:6px;"><%= Attendance.where(date: Date.current).count %></div>
+    <div style="color:var(--muted); margin-top:4px;">Absent: <%= Attendance.where(date: Date.current, status: 'absent').count %></div>
+  </div>
+
+  <div class="card">
+    <div style="color:var(--muted); font-size:0.85rem; font-weight:650;">Outstanding Fees</div>
+    <div style="font-size:1.6rem; font-weight:750; margin-top:6px;"><%= Fee.where(status: 'pending').count %></div>
+    <div style="color:var(--muted); margin-top:4px;">Overdue: <%= Fee.where(status: 'overdue').count %></div>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:14px; margin-bottom:14px;">
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <div style="font-weight:700;">Recent Students</div>
+      <%= link_to "View all", students_path, class: "btn btn-sm" %>
+    </div>
+
+    <% if @recent_students.any? %>
+      <div class="table-container">
+        <table class="table">
+          <thead>
+            <tr><th>Student</th><th>Classroom</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            <% @recent_students.each do |student| %>
+              <tr>
+                <td><strong><%= student.first_name %> <%= student.last_name %></strong></td>
+                <td><%= student.classroom&.name || "Unassigned" %></td>
+                <td><span class="status-badge status-<%= student.status || 'inactive' %>"><%= (student.status || "Unknown").humanize %></span></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <div style="color:var(--muted); padding:8px 0;">No students found.</div>
+    <% end %>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <div style="font-weight:700;">Today’s Attendance</div>
+      <%= link_to "View all", attendances_path, class: "btn btn-sm" %>
+    </div>
+
+    <% if @todays_attendance.any? %>
+      <div class="table-container">
+        <table class="table">
+          <thead>
+            <tr><th>Student</th><th>Status</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <% @todays_attendance.each do |attendance| %>
+              <tr>
+                <td><strong><%= attendance.student&.first_name %> <%= attendance.student&.last_name %></strong></td>
+                <td><span class="status-badge status-<%= attendance.status || 'inactive' %>"><%= (attendance.status || "Unknown").humanize %></span></td>
+                <td><%= attendance.notes&.truncate(32) || "—" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <div style="color:var(--muted); padding:8px 0;">No attendance records for today.</div>
+    <% end %>
+  </div>
+</div>
+
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+    <div style="font-weight:700;">Upcoming Events</div>
+    <%= link_to "View all", events_path, class: "btn btn-sm" %>
+  </div>
+
+  <% upcoming_events = Event.where('start_time > ?', DateTime.current).order(:start_time).limit(5) %>
+  <% if upcoming_events.any? %>
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr><th>Event</th><th>Date</th><th>Time</th><th>Location</th></tr>
+        </thead>
+        <tbody>
+          <% upcoming_events.each do |event| %>
+            <tr>
+              <td><strong><%= event.title %></strong></td>
+              <td><%= event.start_time.strftime("%b %d, %Y") %></td>
+              <td><%= event.start_time.strftime("%I:%M %p") %> – <%= event.end_time.strftime("%I:%M %p") %></td>
+              <td><%= event.location.presence || "—" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div style="color:var(--muted); padding:8px 0;">No upcoming events.</div>
+  <% end %>
+</div>
+
+<style>
+  @media (max-width: 900px) {
+    div[style*="grid-template-columns:repeat(4"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+    div[style*="grid-template-columns:repeat(2"] { grid-template-columns: 1fr !important; }
+  }
+</style>

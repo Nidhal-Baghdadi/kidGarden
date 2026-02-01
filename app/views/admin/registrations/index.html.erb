@@ -1,0 +1,33 @@
+<% content_for :title, "Pending Registrations" %>
+
+<div class="d-flex justify-between items-center mb-4">
+  <h1>Pending Registrations</h1>
+</div>
+
+<div class="card">
+  <div class="table-container">
+    <table class="table" id="registrations-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Requested Role</th>
+          <th>Registration Date</th>
+          <th class="no-sort">Actions</th>
+        </tr>
+      </thead>
+        <tbody>
+      </tbody>
+    </table>
+  </div>
+  <script>
+    $(document).ready(function() {
+      $('#registrations-table').DataTable({
+        "processing": true,
+        "serverSide": true,
+        "ajax": "<%= admin_registrations_path(format: :json) %>"
+      });
+    });
+  </script>
+
+</div>

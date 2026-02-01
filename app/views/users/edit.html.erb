@@ -1,0 +1,70 @@
+<div class="card">
+  <div class="page-header">
+    <div>
+      <h3 class="page-header__title">Edit User</h3>
+      <p class="page-header__subtitle">Update user profile, access role, and approval status.</p>
+    </div>
+
+    <div class="page-actions">
+      <%= link_to "Back", users_path, class: "btn" %>
+      <%= link_to "View", @user, class: "btn" %>
+      <%= link_to "Delete", @user,
+          data: { turbo_method: :delete, turbo_confirm: "Are you sure you want to delete this user?" },
+          class: "btn btn-ghost",
+          style: "color: var(--danger); border-color: rgba(180,35,24,.25);" %>
+    </div>
+  </div>
+
+  <% if @user.errors.any? %>
+    <div class="alert alert--error">
+      <strong><%= pluralize(@user.errors.count, "error") %> prohibited this user from being saved:</strong>
+      <ul style="margin:8px 0 0 18px; color: var(--text-2);">
+        <% @user.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= form_with model: @user, local: true do |form| %>
+    <div class="form-grid">
+      <div class="form-group">
+        <%= form.label :name, class: "form-label" %>
+        <%= form.text_field :name, class: "form-control" %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :email, class: "form-label" %>
+        <%= form.email_field :email, class: "form-control" %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :role, class: "form-label" %>
+        <%= form.select :role, User.roles.keys.map { |role| [role.humanize, role] },
+            { prompt: "Select role" },
+            { class: "form-control" } %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :status, class: "form-label" %>
+        <%= form.select :status, User.statuses.keys.map { |status| [status.humanize, status] },
+            { prompt: "Select status" },
+            { class: "form-control" } %>
+      </div>
+
+      <div class="form-group" style="grid-column: 1 / -1;">
+        <label class="form-label">Approval</label>
+        <label class="form-checkbox">
+          <%= form.check_box :approved %>
+          <span style="color: var(--text-2); font-weight: 600;">Approved</span>
+          <span class="form-help">Allow this user to access the platform.</span>
+        </label>
+      </div>
+
+      <div class="form-group" style="grid-column: 1 / -1; display:flex; justify-content:flex-end; gap:10px;">
+        <%= link_to "Cancel", @user, class: "btn" %>
+        <%= form.submit "Save changes", class: "btn btn-primary" %>
+      </div>
+    </div>
+  <% end %>
+</div>

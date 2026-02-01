@@ -1,0 +1,57 @@
+<% content_for :title, "Sign In" %>
+
+<div class="auth-shell">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-brand">
+        <span class="auth-brand__logo-wrap">
+          <%= image_tag "kid_garden_main_logo.png", class: "auth-brand__logo", alt: "KidGarden" %>
+        </span>
+      </div>
+
+      <h2 class="auth-title">Sign in</h2>
+      <p class="auth-subtitle">Access your kindergarten management dashboard.</p>
+    </div>
+
+    <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
+      <div class="form-group">
+        <%= f.label :email, "Email address", class: "form-label" %>
+        <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "form-control" %>
+      </div>
+
+      <div class="form-group">
+        <%= f.label :password, class: "form-label" %>
+        <%= f.password_field :password, autocomplete: "current-password", class: "form-control" %>
+      </div>
+
+      <% if devise_mapping.rememberable? %>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin: 6px 0 10px 0;">
+          <label class="form-checkbox" style="height:auto;">
+            <%= f.check_box :remember_me %>
+            <span class="form-help" style="color:var(--text-2);">Remember me</span>
+          </label>
+
+          <%= link_to "Forgot password?", new_password_path(resource_name), class: "btn btn-ghost btn-sm" %>
+        </div>
+      <% end %>
+
+      <div style="margin-top: 10px;">
+        <%= f.submit "Sign in", class: "btn btn-primary", style: "width:100%;" %>
+      </div>
+    <% end %>
+
+    <div class="auth-divider"></div>
+
+    <div>
+      <div style="font-weight:700; margin-bottom:6px;">New here?</div>
+      <p class="form-help" style="margin:0 0 12px 0;">
+        Register as a teacher or parent to access the system.
+      </p>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+        <%= link_to "Teacher", new_teacher_registration_path, class: "btn", style: "justify-content:center;" %>
+        <%= link_to "Parent", new_parent_registration_path, class: "btn btn-primary", style: "justify-content:center;" %>
+      </div>
+    </div>
+  </div>
+</div>

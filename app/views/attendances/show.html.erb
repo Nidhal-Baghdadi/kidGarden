@@ -1,0 +1,43 @@
+<% content_for :title, "Attendance Details" %>
+
+<div class="d-flex justify-between items-center mb-4">
+  <h1>Attendance Record</h1>
+  <div>
+    <%= link_to "Edit", edit_attendance_path(@attendance), class: "btn btn-primary" %>
+    <%= link_to "Back to Attendance", attendances_path, class: "btn btn-outline", style: "margin-left: 0.5rem;" %>
+  </div>
+</div>
+
+<div class="grid grid-cols-2 mb-4">
+  <div class="card">
+    <h3>Attendance Information</h3>
+    <div class="form-group">
+      <label><strong>Student:</strong></label>
+      <p><%= @attendance.student&.first_name %> <%= @attendance.student&.last_name %></p>
+    </div>
+    <div class="form-group">
+      <label><strong>Date:</strong></label>
+      <p><%= @attendance.date.strftime("%B %d, %Y") %></p>
+    </div>
+    <div class="form-group">
+      <label><strong>Status:</strong></label>
+      <p>
+        <span class="status-badge status-<%= @attendance.status %>">
+          <%= @attendance.status.humanize %>
+        </span>
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Additional Information</h3>
+    <div class="form-group">
+      <label><strong>Recorded By:</strong></label>
+      <p><%= @attendance.staff&.name || "System" %></p>
+    </div>
+    <div class="form-group">
+      <label><strong>Notes:</strong></label>
+      <p><%= @attendance.notes.present? ? @attendance.notes : "None" %></p>
+    </div>
+  </div>
+</div>

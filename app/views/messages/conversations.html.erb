@@ -1,0 +1,90 @@
+<% content_for :title, "Messages" %>
+
+<div class="d-flex justify-between items-center mb-6">
+  <h1>Messages</h1>
+  <%= link_to "New Message", new_user_conversation_path, class: "btn btn-primary" %>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>With</th>
+          <th>Last Message</th>
+          <th>Date</th>
+          <th>Unread</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @conversations.each do |conversation| %>
+          <tr>
+            <td>
+              <div class="font-medium">
+                <% begin %>
+                  <%= conversation.other_participant(current_user)&.name || "Unknown" %>
+                <% rescue %>
+                  Unknown
+                <% end %>
+              </div>
+              <div class="text-sm text-muted-foreground">
+                <%= conversation.subject %>
+              </div>
+            </td>
+            <td>
+              <% begin %>
+                <% if conversation.last_message %>
+                  <div class="truncate max-w-xs">
+                    <%= conversation.last_message.content&.truncate(50) %>
+                  </div>
+                  <div class="text-xs text-muted-foreground">
+                    <%= time_ago_in_words(conversation.last_message.created_at) %> ago
+                  </div>
+                <% else %>
+                  No messages yet
+                <% end %>
+              <% rescue %>
+                Error loading message
+              <% end %>
+            </td>
+            <td>
+              <% begin %>
+                <% if conversation.last_message %>
+                  <%= conversation.last_message.created_at.strftime("%m/%d/%Y") %>
+                <% else %>
+                  -
+                <% end %>
+              <% rescue %>
+                -
+              <% end %>
+            </td>
+            <td>
+              <% if @unread_counts[conversation.id].to_i > 0 %>
+                <span class="badge bg-primary text-primary-foreground">
+                  <%= @unread_counts[conversation.id] %> new
+                </span>
+              <% end %>
+            </td>
+            <td>
+              <%= link_to "View", conversation_messages_path(conversation), class: "btn btn-outline btn-sm" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <% if @conversations.empty? %>
+    <div class="text-center py-8">
+      <svg class="purpose-icon mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+      </svg>
+      <h3 class="mt-2 text-sm font-medium">No conversations</h3>
+      <p class="mt-1 text-sm text-gray-500">Get started by creating a new conversation.</p>
+      <div class="mt-6">
+        <%= link_to "Start New Conversation", new_user_conversation_path, class: "btn btn-primary" %>
+      </div>
+    </div>
+  <% end %>
+</div>

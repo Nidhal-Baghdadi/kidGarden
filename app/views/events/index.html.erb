@@ -1,0 +1,36 @@
+<% content_for :title, "Events" %>
+
+<div class="d-flex justify-between items-center mb-4">
+  <h1>School Events</h1>
+  <%= link_to "New Event", new_event_path, class: "btn btn-primary" %>
+</div>
+
+<div class="card">
+  <div class="table-container">
+    <table class="table" id="events-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Title</th>
+          <th>Start Time</th>
+          <th>End Time</th>
+          <th>Location</th>
+          <th>Organizer</th>
+          <th class="no-sort">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  $(document).ready(function() {
+    $('#events-table').DataTable({
+      "processing": true,
+      "serverSide": true,
+      "ajax": "<%= events_path(format: :json) %>"
+    });
+  });
+</script>

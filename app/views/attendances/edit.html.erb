@@ -1,0 +1,53 @@
+<% content_for :title, "Edit Attendance" %>
+
+<div class="d-flex justify-between items-center mb-4">
+  <h1>Edit Attendance Record</h1>
+  <%= link_to "Back to Attendance", attendances_path, class: "btn btn-outline" %>
+</div>
+
+<div class="card">
+  <%= form_with model: @attendance, local: true, class: "form" do |form| %>
+    <% if @attendance.errors.any? %>
+      <div class="alert alert-error">
+        <h4><%= pluralize(@attendance.errors.count, "error") %> prohibited this attendance from being saved:</h4>
+        <ul>
+          <% @attendance.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="grid grid-cols-2">
+      <div class="form-group">
+        <%= form.label :student_id, "Student", class: "form-label" %>
+        <%= form.select :student_id, Student.all.map { |student| ["#{student.first_name} #{student.last_name}", student.id] }, { selected: @attendance.student_id }, { class: "form-control" } %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :date, class: "form-label" %>
+        <%= form.date_field :date, class: "form-control" %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :status, class: "form-label" %>
+        <%= form.select :status, Attendance.statuses.keys.map { |key| [key.humanize, key] }, { selected: @attendance.status }, { class: "form-control" } %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :staff_id, "Taken By", class: "form-label" %>
+        <%= form.select :staff_id, User.where(role: %w[teacher staff]).map { |user| [user.name, user.id] }, { selected: @attendance.staff_id }, { class: "form-control" } %>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :notes, class: "form-label" %>
+      <%= form.text_area :notes, rows: 3, class: "form-control" %>
+    </div>
+
+    <div class="d-flex justify-between mt-4">
+      <%= form.submit "Update Attendance", class: "btn btn-primary" %>
+      <%= link_to "Cancel", attendances_path, class: "btn btn-outline" %>
+    </div>
+  <% end %>
+</div>

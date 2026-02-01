@@ -1,0 +1,137 @@
+<% content_for :title, "Student Details" %>
+
+<div class="d-flex justify-between items-center mb-4">
+  <h1>Student: <%= @student.first_name %> <%= @student.last_name %></h1>
+  <div>
+    <%= link_to "Edit", edit_student_path(@student), class: "btn btn-primary" %>
+    <%= link_to "Back to Students", students_path, class: "btn btn-outline", style: "margin-left: 0.5rem;" %>
+  </div>
+</div>
+
+<div class="grid grid-cols-2 mb-4">
+  <div class="card">
+    <h3>Personal Information</h3>
+    <div class="form-group">
+      <label><strong>First Name:</strong></label>
+      <p><%= @student.first_name %></p>
+    </div>
+    <div class="form-group">
+      <label><strong>Last Name:</strong></label>
+      <p><%= @student.last_name %></p>
+    </div>
+    <div class="form-group">
+      <label><strong>Date of Birth:</strong></label>
+      <p><%= @student.date_of_birth&.strftime("%B %d, %Y") %></p>
+    </div>
+    <div class="form-group">
+      <label><strong>Gender:</strong></label>
+      <p><%= @student.gender.humanize %></p>
+    </div>
+    <div class="form-group">
+      <label><strong>Status:</strong></label>
+      <p>
+        <span class="status-badge status-<%= @student.status %>">
+          <%= @student.status.humanize %>
+        </span>
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>School Information</h3>
+    <div class="form-group">
+      <label><strong>Enrollment Date:</strong></label>
+      <p><%= @student.enrollment_date&.strftime("%B %d, %Y") %></p>
+    </div>
+    <div class="form-group">
+      <label><strong>Classroom:</strong></label>
+      <p><%= @student.classroom&.name || "Unassigned" %></p>
+    </div>
+    <div class="form-group">
+      <label><strong>Parent/Guardian:</strong></label>
+      <p><%= @student.parent&.name || "Not assigned" %></p>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-2">
+  <div class="card">
+    <h3>Emergency Contact</h3>
+    <div class="form-group">
+      <label><strong>Contact Name:</strong></label>
+      <p><%= @student.emergency_contact_name || "Not provided" %></p>
+    </div>
+    <div class="form-group">
+      <label><strong>Contact Phone:</strong></label>
+      <p><%= @student.emergency_contact_phone || "Not provided" %></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Medical Information</h3>
+    <div class="form-group">
+      <label><strong>Medical Details:</strong></label>
+      <p><%= @student.medical_information.present? ? @student.medical_information : "Not provided" %></p>
+    </div>
+  </div>
+</div>
+
+<div class="card mt-4">
+  <div class="d-flex justify-between items-center mb-3">
+    <h3>Related Parents/Guardians</h3>
+    <%= link_to "Add Parent/Guardian", "#", class: "btn btn-primary", onclick: "document.getElementById('add-parent-form').scrollIntoView(); return false;" %>
+  </div>
+  <% if @student.parent_student_relationships.any? %>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Relationship</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @student.parent_student_relationships.includes(:parent).each do |relationship| %>
+            <tr>
+              <td><%= relationship.parent.name %></td>
+              <td><%= relationship.parent.email %></td>
+              <td><%= relationship.parent.phone %></td>
+              <td><%= relationship.relationship_type.humanize %></td>
+              <td>
+                <%= link_to "Remove", relationship, method: :delete, class: "btn btn-danger",
+                            confirm: "Are you sure you want to remove this parent relationship?" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p>No additional parents/guardians are associated with this student.</p>
+  <% end %>
+</div>
+
+<div class="card mt-4" id="add-parent-form">
+  <h3>Add Parent/Guardian</h3>
+  <%= form_with model: ParentStudentRelationship.new, url: parent_student_relationships_path, local: true, class: "form" do |form| %>
+    <%= form.hidden_field :student_id, value: @student.id %>
+    <div class="grid grid-cols-2">
+      <div class="form-group">
+        <%= form.label :parent_id, "Parent/Guardian", class: "form-label" %>
+        <%= form.select :parent_id, User.where(role: 'parent').map { |user| [user.name, user.id] }, { prompt: "Select Parent" }, { class: "form-control" } %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :relationship_type, "Relationship Type", class: "form-label" %>
+        <%= form.select :relationship_type, ParentStudentRelationship.relationship_types.keys.map { |key| [key.humanize, key] }, { prompt: "Select Relationship" }, { class: "form-control" } %>
+      </div>
+    </div>
+
+    <div class="d-flex justify-between mt-4">
+      <%= form.submit "Add Parent", class: "btn btn-primary" %>
+    </div>
+  <% end %>
+</div>

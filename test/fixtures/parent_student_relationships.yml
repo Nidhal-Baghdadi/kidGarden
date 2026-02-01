@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  parent_id: 1
+  student_id: 1
+  relationship_type: 1
+  contact_priority: 1
+  active: false
+
+two:
+  parent_id: 1
+  student_id: 1
+  relationship_type: 1
+  contact_priority: 1
+  active: false

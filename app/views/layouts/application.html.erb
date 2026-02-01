@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Kindergarten ERP</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= yield :head %>
+
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icon.png">
+
+    <!-- Inter (clean SaaS default) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="app" data-theme="light">
+    <% if user_signed_in? %>
+      <!-- Mobile sidebar toggle -->
+      <button class="icon-btn mobile-only" id="sidebarToggle" aria-label="Open navigation">
+        ☰
+      </button>
+
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar__brand">
+          <%= link_to authenticated_root_path, class: "brand" do %>
+            <%= image_tag "kid_garden_main_logo.png", class: "brand__logo", alt: "KidGarden" %>
+          <% end %>
+        </div>
+
+        <nav class="nav">
+          <%= link_to "Dashboard", root_path, class: nav_link_class(root_path, controller_name) %>
+
+          <% if current_user&.admin? || current_user&.teacher? %>
+            <%= link_to "Students", students_path, class: nav_link_class(students_path, controller_name, "students") %>
+            <%= link_to "Classrooms", classrooms_path, class: nav_link_class(classrooms_path, controller_name, "classrooms") %>
+            <%= link_to "Parents", parents_path, class: nav_link_class(parents_path, controller_name, "parents") %>
+          <% end %>
+
+          <% if current_user&.admin? || current_user&.teacher? || current_user&.staff? %>
+            <%= link_to "Attendance", attendances_path, class: nav_link_class(attendances_path, controller_name, "attendances") %>
+          <% end %>
+
+          <% if current_user&.admin? || current_user&.teacher? %>
+            <%= link_to "Fees", fees_path, class: nav_link_class(fees_path, controller_name, "fees") %>
+          <% end %>
+
+          <%= link_to "Events", events_path, class: nav_link_class(events_path, controller_name, "events") %>
+          <%= link_to "Calendar", calendar_index_path, class: nav_link_class(calendar_index_path, controller_name, "calendar") %>
+
+          <% if current_user&.admin? || current_user&.teacher? || current_user&.parent? %>
+            <%= link_to "Resources", resources_path, class: nav_link_class(resources_path, controller_name, "resources") %>
+            <%= link_to "Messages", user_conversations_path, class: nav_link_class(user_conversations_path, controller_name, "messages") %>
+            <%= link_to "Photos", photos_path, class: nav_link_class(photos_path, controller_name, "photos") %>
+          <% end %>
+
+          <% if current_user&.admin? %>
+            <%= link_to "Admin Panel", admin_registrations_path, class: nav_link_class(admin_registrations_path, controller_name, "admin") %>
+          <% end %>
+        </nav>
+
+        <div class="sidebar__footer">
+          <div class="sidebar__user">
+            <div class="avatar"><%= current_user.name.first.upcase %></div>
+            <div class="sidebar__user-meta">
+              <div class="sidebar__user-name"><%= current_user.name %></div>
+              <div class="sidebar__user-role"><%= current_user.role.humanize %></div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div class="topbar__title">
+            <h1>
+              <% if content_for?(:title) %>
+                <%= yield :title %>
+              <% else %>
+                <%= controller_name.humanize %>
+              <% end %>
+            </h1>
+          </div>
+
+          <div class="topbar__actions">
+            <button class="icon-btn" id="themeToggle" title="Toggle theme" aria-label="Toggle theme">
+              <span id="themeIcon">◐</span>
+            </button>
+
+            <div class="dropdown" id="userMenu">
+              <button class="dropdown__trigger" id="userMenuBtn" aria-haspopup="true" aria-expanded="false">
+                <span class="avatar avatar--sm"><%= current_user.name.first.upcase %></span>
+                <span class="dropdown__label"><%= current_user.name %></span>
+                <span class="dropdown__chev">▾</span>
+              </button>
+
+              <div class="dropdown__panel" id="userMenuPanel" role="menu">
+                <%= link_to "Profile", profile_path, class: "dropdown__item", role: "menuitem" %>
+                <%= link_to "Logout", destroy_user_session_path, data: { turbo_method: :delete }, class: "dropdown__item dropdown__item--danger", role: "menuitem" %>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section class="content">
+          <% if notice %>
+            <div class="alert alert--success"><%= notice %></div>
+          <% end %>
+          <% if alert %>
+            <div class="alert alert--error"><%= alert %></div>
+          <% end %>
+
+          <%= yield %>
+        </section>
+      </main>
+    <% else %>
+      <main class="auth">
+        <%= yield %>
+      </main>
+    <% end %>
+
+    <script>
+      (function() {
+        const body = document.body;
+
+        // Theme
+        const saved = localStorage.getItem("theme");
+        const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const initial = saved || (prefersDark ? "dark" : "light");
+        body.dataset.theme = initial;
+
+        const themeBtn = document.getElementById("themeToggle");
+        const themeIcon = document.getElementById("themeIcon");
+
+        function syncIcon() {
+          if (!themeIcon) return;
+          themeIcon.textContent = (body.dataset.theme === "dark") ? "☾" : "◐";
+        }
+        syncIcon();
+
+        themeBtn?.addEventListener("click", function() {
+          body.dataset.theme = (body.dataset.theme === "dark") ? "light" : "dark";
+          localStorage.setItem("theme", body.dataset.theme);
+          syncIcon();
+        });
+
+        // Dropdown
+        const btn = document.getElementById("userMenuBtn");
+        const panel = document.getElementById("userMenuPanel");
+        btn?.addEventListener("click", function(e) {
+          e.stopPropagation();
+          panel?.classList.toggle("is-open");
+          btn.setAttribute("aria-expanded", panel?.classList.contains("is-open") ? "true" : "false");
+        });
+        document.addEventListener("click", function() {
+          panel?.classList.remove("is-open");
+          btn?.setAttribute("aria-expanded", "false");
+        });
+
+        // Sidebar (mobile)
+        const sidebar = document.getElementById("sidebar");
+        const toggle = document.getElementById("sidebarToggle");
+        toggle?.addEventListener("click", function(e) {
+          e.stopPropagation();
+          sidebar?.classList.toggle("is-open");
+        });
+        document.addEventListener("click", function(e) {
+          if (window.innerWidth <= 900 && sidebar?.classList.contains("is-open")) {
+            const clickInside = sidebar.contains(e.target) || toggle.contains(e.target);
+            if (!clickInside) sidebar.classList.remove("is-open");
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

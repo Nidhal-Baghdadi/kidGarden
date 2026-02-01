@@ -1,0 +1,75 @@
+<% content_for :title, "Payment Details" %>
+
+<div class="d-flex justify-between items-center mb-4">
+  <h1>Payment Details</h1>
+  <div class="flex space-x-2">
+    <%= link_to "Edit", edit_payment_path(@payment), class: "btn btn-outline" %>
+    <%= link_to "Back to Payments", payments_path, class: "btn btn-outline" %>
+  </div>
+</div>
+
+<div class="card">
+  <div class="grid grid-cols-2 gap-6">
+    <div>
+      <h3 class="text-lg font-semibold mb-3">Payment Information</h3>
+      <div class="space-y-2">
+        <p><span class="font-medium">ID:</span> <%= @payment.id %></p>
+        <p><span class="font-medium">Reference Number:</span> <%= @payment.reference_number || "N/A" %></p>
+        <p><span class="font-medium">Transaction ID:</span> <%= @payment.transaction_id || "N/A" %></p>
+        <p><span class="font-medium">Amount:</span> $<%= "%.2f" % @payment.amount %></p>
+        <p><span class="font-medium">Payment Method:</span> <%= @payment.payment_method_label %></p>
+        <p><span class="font-medium">Status:</span> 
+          <span class="status-badge status-<%= @payment.status %>">
+            <%= @payment.status_label %>
+          </span>
+        </p>
+        <p><span class="font-medium">Date:</span> <%= @payment.payment_date.strftime("%B %d, %Y") %></p>
+      </div>
+    </div>
+
+    <div>
+      <h3 class="text-lg font-semibold mb-3">Associated Information</h3>
+      <div class="space-y-2">
+        <p><span class="font-medium">Student:</span> 
+          <%= @payment.fee&.student&.first_name %> <%= @payment.fee&.student&.last_name %> 
+          <% if @payment.fee&.student %>
+            (<%= link_to "View Profile", @payment.fee.student, class: "text-blue-600 hover:underline" %>)
+          <% end %>
+        </p>
+        <p><span class="font-medium">Fee:</span> 
+          <% if @payment.fee %>
+            <%= @payment.fee.description || "Fee ##{@payment.fee.id}" %>
+            (<%= link_to "View Fee", @payment.fee, class: "text-blue-600 hover:underline" %>)
+          <% else %>
+            Fee Deleted
+          <% end %>
+        </p>
+        <p><span class="font-medium">Processed By:</span> 
+          <%= @payment.created_by&.name || "System" %>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <% if @payment.notes.present? %>
+    <div class="mt-6">
+      <h3 class="text-lg font-semibold mb-2">Notes</h3>
+      <p><%= simple_format(@payment.notes) %></p>
+    </div>
+  <% end %>
+
+  <% if @payment.payment_metadata.present? %>
+    <div class="mt-6">
+      <h3 class="text-lg font-semibold mb-2">Payment Metadata</h3>
+      <pre class="bg-gray-100 p-4 rounded"><%= JSON.pretty_generate(@payment.payment_metadata) %></pre>
+    </div>
+  <% end %>
+
+  <div class="mt-6 flex space-x-2">
+    <% if @payment.status_completed? %>
+      <%= link_to "Refund Payment", refund_payment_path(@payment), method: :patch, 
+                  class: "btn btn-danger", 
+                  confirm: "Are you sure you want to refund this payment? This action cannot be undone." %>
+    <% end %>
+  </div>
+</div>

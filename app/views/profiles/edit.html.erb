@@ -1,0 +1,45 @@
+<div class="container mx-auto px-4 py-8">
+  <div class="max-w-2xl mx-auto">
+    <div class="card professional-card">
+      <div class="card-title professional-card-title">Edit Profile</div>
+      
+      <%= form_with model: @user, url: profile_path, method: :patch, local: true, class: "space-y-4" do |form| %>
+        <% if @user.errors.any? %>
+          <div class="alert professional-alert professional-alert-error">
+            <ul class="list-disc pl-5 mb-0">
+              <% @user.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+        
+        <div class="form-group">
+          <%= form.label :name, class: "form-label professional-label" %>
+          <%= form.text_field :name, class: "form-control professional-input w-full" %>
+        </div>
+        
+        <div class="form-group">
+          <%= form.label :email, class: "form-label professional-label" %>
+          <%= form.email_field :email, class: "form-control professional-input w-full" %>
+        </div>
+        
+        <div class="form-group">
+          <%= form.label :phone, class: "form-label professional-label" %>
+          <%= form.telephone_field :phone, class: "form-control professional-input w-full" %>
+        </div>
+        
+        <div class="form-group">
+          <%= form.label :address, class: "form-label professional-label" %>
+          <%= form.text_area :address, rows: 3, class: "form-control professional-input w-full" %>
+        </div>
+        
+        
+        <div class="flex justify-end space-x-3 pt-4">
+          <%= link_to "Cancel", profile_path, class: "btn professional-btn professional-btn-secondary" %>
+          <%= form.submit "Update Profile", class: "btn professional-btn professional-btn-primary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

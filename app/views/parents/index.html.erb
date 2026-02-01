@@ -1,0 +1,70 @@
+<% content_for :title, "Parents" %>
+
+<div class="d-flex justify-between items-center mb-4">
+  <h1>Parents</h1>
+  <% if current_user.admin? %>
+    <%= link_to "New Parent", new_parent_path, class: "btn btn-primary" %>
+  <% end %>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Children</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @parents.each do |parent| %>
+          <tr>
+            <td><%= parent.name %></td>
+            <td><%= parent.email %></td>
+            <td><%= parent.phone || "N/A" %></td>
+            <td>
+              <% if parent.students_as_parent.any? %>
+                <ul class="list-disc pl-4">
+                  <% parent.students_as_parent.limit(3).each do |student| %>
+                    <li><%= student.first_name %> <%= student.last_name %></li>
+                  <% end %>
+                  <% if parent.students_as_parent.count > 3 %>
+                    <li>... and <%= parent.students_as_parent.count - 3 %> more</li>
+                  <% end %>
+                </ul>
+              <% else %>
+                No children assigned
+              <% end %>
+            </td>
+            <td>
+              <%= link_to "View", parent, class: "btn btn-outline btn-sm" %>
+              <% if current_user.admin? %>
+                <%= link_to "Edit", edit_parent_path(parent), class: "btn btn-outline btn-sm ml-2" %>
+                <%= link_to "Delete", parent, method: :delete, class: "btn btn-danger btn-sm ml-2",
+                            confirm: "Are you sure?", style: "margin-left: 0.25rem;" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <% if @parents.empty? %>
+    <div class="text-center py-8">
+      <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+      </svg>
+      <h3 class="mt-2 text-sm font-medium">No parents</h3>
+      <p class="mt-1 text-sm text-gray-500">Get started by creating a new parent account.</p>
+      <% if current_user.admin? %>
+        <div class="mt-6">
+          <%= link_to "Add Parent", new_parent_path, class: "btn btn-primary" %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>

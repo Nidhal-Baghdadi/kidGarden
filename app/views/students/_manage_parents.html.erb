@@ -1,0 +1,63 @@
+<% content_for :title, "Student Parents/Guardians" %>
+
+<div class="d-flex justify-between items-center mb-4">
+  <h1>Manage Parents for <%= @student.first_name %> <%= @student.last_name %></h1>
+  <%= link_to "Back to Student", @student, class: "btn btn-outline" %>
+</div>
+
+<div class="card">
+  <h3>Add Parent/Guardian</h3>
+  <%= form_with model: @relationship, url: { controller: 'parent_student_relationships', action: 'create' }, local: true, class: "form" do |form| %>
+    <%= form.hidden_field :student_id, value: @student.id %>
+    <div class="grid grid-cols-2">
+      <div class="form-group">
+        <%= form.label :parent_id, "Parent/Guardian", class: "form-label" %>
+        <%= form.select :parent_id, User.where(role: 'parent').map { |user| [user.name, user.id] }, { prompt: "Select Parent" }, { class: "form-control" } %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :relationship_type, "Relationship Type", class: "form-label" %>
+        <%= form.select :relationship_type, ParentStudentRelationship.relationship_types.keys.map { |key| [key.humanize, key] }, { prompt: "Select Relationship" }, { class: "form-control" } %>
+      </div>
+    </div>
+
+    <div class="d-flex justify-between mt-4">
+      <%= form.submit "Add Parent", class: "btn btn-primary" %>
+    </div>
+  <% end %>
+</div>
+
+<div class="card mt-4">
+  <h3>Current Parents/Guardians</h3>
+  <% if @student.parent_student_relationships.any? %>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Parent Name</th>
+            <th>Relationship</th>
+            <th>Contact Priority</th>
+            <th>Active</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @student.parent_student_relationships.includes(:parent).each do |relationship| %>
+            <tr>
+              <td><%= relationship.parent.name %></td>
+              <td><%= relationship.relationship_type.humanize %></td>
+              <td><%= relationship.contact_priority || "N/A" %></td>
+              <td><%= relationship.active? ? "Yes" : "No" %></td>
+              <td>
+                <%= link_to "Remove", relationship, method: :delete, class: "btn btn-danger", 
+                            confirm: "Are you sure you want to remove this parent relationship?" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p>No additional parents/guardians are associated with this student.</p>
+  <% end %>
+</div>

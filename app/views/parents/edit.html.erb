@@ -1,0 +1,56 @@
+<% content_for :title, "Edit Parent" %>
+
+<div class="d-flex justify-between items-center mb-4">
+  <h1>Edit Parent</h1>
+  <div class="flex space-x-2">
+    <%= link_to "View", @parent, class: "btn btn-outline" %>
+    <%= link_to "Back to Parents", parents_path, class: "btn btn-outline ml-2" %>
+  </div>
+</div>
+
+<div class="card">
+  <%= form_with model: [@parent], local: true, class: "form" do |form| %>
+    <% if @parent.errors.any? %>
+      <div class="alert alert-error">
+        <h4><%= pluralize(@parent.errors.count, "error") %> prohibited this parent from being saved:</h4>
+        <ul>
+          <% @parent.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="form-group">
+        <%= form.label :name, class: "form-label" %>
+        <%= form.text_field :name, class: "form-control" %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :email, class: "form-label" %>
+        <%= form.email_field :email, class: "form-control" %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :phone, class: "form-label" %>
+        <%= form.telephone_field :phone, class: "form-control" %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :date_of_birth, "Date of Birth", class: "form-label" %>
+        <%= form.date_field :date_of_birth, class: "form-control" %>
+      </div>
+
+      <div class="form-group md:col-span-2">
+        <%= form.label :address, class: "form-label" %>
+        <%= form.text_area :address, rows: 3, class: "form-control" %>
+      </div>
+    </div>
+
+    <div class="d-flex justify-between mt-6">
+      <%= form.submit "Update Parent", class: "btn btn-primary" %>
+      <%= link_to "Cancel", @parent, class: "btn btn-outline" %>
+    </div>
+  <% end %>
+</div>

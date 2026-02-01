@@ -1,0 +1,27 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  first_name: MyString
+  last_name: MyString
+  date_of_birth: 2025-11-25
+  enrollment_date: 2025-11-25
+  status: 1
+  gender: 1
+  emergency_contact_name: MyString
+  emergency_contact_phone: MyString
+  medical_information: MyText
+  parent_id: 1
+  classroom_id: 1
+
+two:
+  first_name: MyString
+  last_name: MyString
+  date_of_birth: 2025-11-25
+  enrollment_date: 2025-11-25
+  status: 1
+  gender: 1
+  emergency_contact_name: MyString
+  emergency_contact_phone: MyString
+  medical_information: MyText
+  parent_id: 1
+  classroom_id: 1

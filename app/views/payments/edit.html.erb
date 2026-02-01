@@ -1,0 +1,13 @@
+<% content_for :title, "Edit Payment" %>
+
+<div class="d-flex justify-between items-center mb-4">
+  <h1>Edit Payment</h1>
+  <div class="flex space-x-2">
+    <%= link_to "View", @payment, class: "btn btn-outline" %>
+    <%= link_to "Back to Payments", payments_path, class: "btn btn-outline" %>
+  </div>
+</div>
+
+<div class="card">
+  <%= render 'form' %>
+</div>
