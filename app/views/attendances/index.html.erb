@@ -13,58 +13,19 @@
   </div>
 </div>
 
-<div class="card">
-  <div class="table-container">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Student</th>
-          <th>Date</th>
-          <th>Status</th>
-          <th>Notes</th>
-          <th>Taken By</th>
-          <th class="no-sort">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @attendances.each do |attendance| %>
-          <tr>
-            <td><%= attendance.id %></td>
-            <td><%= attendance.student&.full_name || "—" %></td>
-            <td><%= attendance.date&.strftime("%B %d, %Y") || "—" %></td>
-            <td>
-              <% if attendance.status.present? %>
-                <span class="status-badge status-<%= attendance.status %>"><%= attendance.status.humanize %></span>
-              <% else %>
-                —
-              <% end %>
-            </td>
-            <td><%= attendance.notes.presence || "—" %></td>
-            <td><%= attendance.staff&.name || "System" %></td>
-            <td>
-              <%= link_to "View", attendance, class: "btn btn-sm" %>
-
-              <% if current_user.admin? || current_user.teacher? || current_user.staff? %>
-                <%= link_to "Edit", edit_attendance_path(attendance), class: "btn btn-ghost btn-sm" %>
-              <% end %>
-
-              <% if current_user.admin? || current_user.teacher? || current_user.staff? %>
-                <%= link_to "Delete", attendance,
-                      method: :delete,
-                      data: { confirm: "Delete this attendance record?" },
-                      class: "btn btn-ghost btn-sm" %>
-              <% end %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
+<div class="card" style="margin-bottom:24px;">
+  <h3 style="font-size: 1rem; margin: 0 0 12px 0;">Attendance Overview (Today)</h3>
+  <div style="height: 180px; position: relative;">
+    <canvas id="attendanceOverviewChart"></canvas>
   </div>
+</div>
 
-  <% if @attendances.empty? %>
+<div class="card">
+  <% if @attendances.any? %>
+    <div id="attendance-table"></div>
+  <% else %>
     <div style="padding:18px;">
-      <div class="form-help">No attendance records found.</div>
+      <div class="text-frame">No attendance records found.</div>
       <% if current_user.admin? || current_user.teacher? || current_user.staff? %>
         <div style="margin-top:12px;">
           <%= link_to "Record Attendance", new_attendance_path, class: "btn btn-primary" %>
@@ -73,3 +34,91 @@
     </div>
   <% end %>
 </div>
+
+<script>
+  (function() {
+    let chart = null;
+
+    function initAttendance() {
+      const tableEl = document.getElementById("attendance-table");
+      const canvas = document.getElementById("attendanceOverviewChart");
+
+      if (!tableEl && !canvas) return;
+
+      if (chart) chart.destroy();
+
+      if (canvas) {
+        // Simple counts from the collection passed to view (usually filtered or all)
+        // Note: Ideally this data comes from a specific query, but for index page using displayed collection is ok for simple stats
+        // However, @attendances is paginated usually? If so, this chart only shows current page stats. 
+        // Let's use raw counts for *Today* specifically, as that's most useful.
+        const present = <%= Attendance.where(date: Date.current, status: 'present').count %>;
+        const absent = <%= Attendance.where(date: Date.current, status: 'absent').count %>;
+        const late = <%= Attendance.where(date: Date.current, status: 'late').count %>;
+
+        chart = new Chart(canvas.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: ['Present', 'Absent', 'Late'],
+            datasets: [{
+              label: 'Students',
+              data: [present, absent, late],
+              backgroundColor: ['#10B981', '#EF4444', '#F59E0B'],
+              borderRadius: 4,
+              barThickness: 40
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true } },
+            plugins: { legend: { display: false } }
+          }
+        });
+      }
+
+      if (tableEl && !tableEl.classList.contains("tabulator")) {
+        const data = [
+          <% @attendances.each do |a| %>
+          {
+            id: <%= a.id %>,
+            student: "<%= a.student&.full_name || '—' %>",
+            date: "<%= a.date&.strftime('%B %d, %Y') || '—' %>",
+            status: "<%= a.status || 'unknown' %>",
+            notes: "<%= a.notes.presence || '—' %>",
+            staff: "<%= a.staff&.name || 'System' %>",
+            link: "<%= attendance_path(a) %>"
+          },
+          <% end %>
+        ];
+
+        new Tabulator(tableEl, {
+          data: data,
+          layout: "fitColumns",
+          pagination: "local",
+          paginationSize: 15,
+          columns: [
+            { title: "ID", field: "id", width: 60 },
+            { title: "Student", field: "student", widthGrow: 1.5 },
+            { title: "Date", field: "date" },
+            { 
+              title: "Status", field: "status",
+              formatter: function(cell) {
+                const val = cell.getValue();
+                return `<span class='status-badge status-${val}'>${val.charAt(0).toUpperCase() + val.slice(1)}</span>`;
+              }
+            },
+            { title: "Notes", field: "notes" },
+            { title: "Taken By", field: "staff" },
+            { 
+              title: "Actions", formatter: function(cell) {
+                 return `<a href='${cell.getData().link}' class='btn btn-sm'>View</a>`;
+              } 
+            }
+          ]
+        });
+      }
+    }
+    document.addEventListener("turbo:load", initAttendance);
+  })();
+</script>

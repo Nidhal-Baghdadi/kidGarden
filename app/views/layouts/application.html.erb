@@ -18,10 +18,17 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
-    <!-- Inter (clean SaaS default) -->
+    <!-- Fonts: Nunito (Friendly, Rounded) & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Tabulator (Stable Base) -->
+    <link href="https://unpkg.com/tabulator-tables@6.3.1/dist/css/tabulator_bootstrap5.min.css" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.6.1/dist/js/tabulator.min.js"></script>
 
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
@@ -56,6 +63,7 @@
 
           <% if current_user&.admin? || current_user&.teacher? %>
             <%= link_to "Fees", fees_path, class: nav_link_class(fees_path, controller_name, "fees") %>
+            <%= link_to "Invoices", invoices_path, class: nav_link_class(invoices_path, controller_name, "invoices") %>
           <% end %>
 
           <%= link_to "Events", events_path, class: nav_link_class(events_path, controller_name, "events") %>
@@ -116,15 +124,18 @@
         </header>
 
         <section class="content">
-          <% if notice %>
-            <div class="alert alert--success"><%= notice %></div>
-          <% end %>
-          <% if alert %>
-            <div class="alert alert--error"><%= alert %></div>
-          <% end %>
+          <div id="flash">
+            <% if notice %>
+              <div class="alert alert--success"><%= notice %></div>
+            <% end %>
+            <% if alert %>
+              <div class="alert alert--error"><%= alert %></div>
+            <% end %>
+          </div>
 
           <%= yield %>
         </section>
+
       </main>
     <% else %>
       <main class="auth">

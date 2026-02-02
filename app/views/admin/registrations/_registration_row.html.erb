@@ -1,0 +1,30 @@
+<tr id="<%= dom_id(registration) %>">
+  <td><%= registration.name %></td>
+  <td><%= registration.email %></td>
+  <td>
+    <%=
+      case registration.role_request
+      when "teacher_request" then "Teacher"
+      when "parent_request"  then "Parent"
+      when "staff_request"   then "Staff"
+      else "N/A"
+      end
+    %>
+  </td>
+  <td><%= registration.created_at.strftime("%b %d, %Y") %></td>
+  <td>
+    <div class="page-actions">
+      <%= link_to "View", admin_registration_path(registration), class: "btn btn-sm" %>
+
+      <%= link_to "Approve",
+                  approve_admin_registration_path(registration),
+                  class: "btn btn-sm btn-primary",
+                  data: { turbo_method: :patch, turbo_confirm: "Approve this registration?" } %>
+
+      <%= link_to "Reject",
+                  reject_admin_registration_path(registration),
+                  class: "btn btn-sm btn-ghost",
+                  data: { turbo_method: :patch, turbo_confirm: "Reject and delete this user?" } %>
+    </div>
+  </td>
+</tr>

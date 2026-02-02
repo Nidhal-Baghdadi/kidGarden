@@ -13,55 +13,126 @@
   </div>
 </div>
 
-<div class="card">
-  <div class="table-container">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Name</th>
-          <th>Teacher</th>
-          <th>Capacity</th>
-          <th>Students</th>
-          <th class="no-sort">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @classrooms.each do |classroom| %>
-          <tr>
-            <td><%= classroom.id %></td>
-            <td><%= classroom.name %></td>
-            <td><%= classroom.teacher&.name || "Unassigned" %></td>
-            <td><%= classroom.capacity %></td>
-            <td><%= classroom.students.size %></td>
-            <td>
-              <%= link_to "View", classroom, class: "btn btn-sm" %>
-
-              <% if current_user.admin? || (current_user.teacher? && classroom.teacher == current_user) %>
-                <%= link_to "Edit", edit_classroom_path(classroom), class: "btn btn-ghost btn-sm" %>
-              <% end %>
-
-              <% if current_user.admin? %>
-                <%= link_to "Delete", classroom,
-                      method: :delete,
-                      data: { confirm: "Delete this classroom?" },
-                      class: "btn btn-ghost btn-sm" %>
-              <% end %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
+<div class="dashboard-grid">
+  <!-- Chart: Capacity vs Enrollment -->
+  <div class="stat-card" style="grid-column: span 2;">
+    <div class="stat-card__label">Classroom Capacity vs Enrollment</div>
+    <div style="height: 200px; position: relative;">
+      <canvas id="classroomCapacityChart"></canvas>
+    </div>
   </div>
 
-  <% if @classrooms.empty? %>
-    <div style="padding:18px;">
-      <div class="form-help">No classrooms found.</div>
+  <!-- Stats -->
+  <div class="stat-card">
+    <div class="stat-card__label">Total Classrooms</div>
+    <div class="stat-card__value"><%= @classrooms.size %></div>
+    <div class="stat-card__meta">Teachers: <%= @classrooms.map(&:teacher_id).compact.uniq.size %></div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-card__label">Total Capacity</div>
+    <div class="stat-card__value"><%= @classrooms.sum(&:capacity) %></div>
+    <div class="stat-card__meta">Vacancies: <%= @classrooms.sum(&:capacity) - Student.count %></div>
+  </div>
+</div>
+
+<div class="card">
+  <% if @classrooms.any? %>
+    <div id="classrooms-table"></div>
+  <% else %>
+    <div class="text-frame" style="width:100%; text-align:center;">
+      No classrooms found. 
       <% if current_user.admin? || current_user.teacher? %>
-        <div style="margin-top:12px;">
-          <%= link_to "Create Classroom", new_classroom_path, class: "btn btn-primary" %>
-        </div>
+        <%= link_to "Create your first classroom", new_classroom_path %>
       <% end %>
     </div>
   <% end %>
 </div>
+
+<script>
+  (function() {
+    let chart = null;
+
+    function initClassrooms() {
+      const tableEl = document.getElementById("classrooms-table");
+      const canvas = document.getElementById("classroomCapacityChart");
+
+      if (!tableEl && !canvas) return;
+
+      if (chart) chart.destroy();
+
+      if (canvas) {
+        const labels = [<% @classrooms.each { |c| %> "<%= j c.name %>", <% } %>];
+        const capacities = [<% @classrooms.each { |c| %> <%= c.capacity %>, <% } %>];
+        const enrollments = [<% @classrooms.each { |c| %> <%= c.students.size %>, <% } %>];
+
+        chart = new Chart(canvas.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: 'Capacity',
+                data: capacities,
+                backgroundColor: '#E5E7EB',
+                borderRadius: 4
+              },
+              {
+                label: 'Enrolled',
+                data: enrollments,
+                backgroundColor: '#10B981',
+                borderRadius: 4
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: { stacked: true, grid: { display: false } },
+              y: { stacked: false, beginAtZero: true }
+            },
+            plugins: { legend: { position: 'bottom' } }
+          }
+        });
+      }
+
+      if (tableEl && !tableEl.classList.contains("tabulator")) {
+        const data = [
+          <% @classrooms.each do |c| %>
+          {
+            id: <%= c.id %>,
+            name: "<%= j c.name %>",
+            teacher: "<%= j(c.teacher&.name || 'Unassigned') %>",
+            capacity: <%= c.capacity %>,
+            students: <%= c.students.size %>,
+            view_link: "<%= classroom_path(c) %>",
+            edit_link: "<%= (current_user.admin? || (current_user.teacher? && c.teacher == current_user)) ? edit_classroom_path(c) : '' %>"
+          },
+          <% end %>
+        ];
+
+        new Tabulator(tableEl, {
+          data: data,
+          layout: "fitColumns",
+          columns: [
+            { title: "ID", field: "id", width: 60 },
+            { title: "Classroom Name", field: "name", widthGrow: 1.5 },
+            { title: "Teacher", field: "teacher" },
+            { title: "Capacity", field: "capacity", width: 100 },
+            { title: "Students", field: "students", width: 100 },
+            {
+              title: "Actions", formatter: function(cell) {
+                const d = cell.getData();
+                let h = `<a href='${d.view_link}' class='btn btn-sm'>View</a>`;
+                if(d.edit_link) h += ` <a href='${d.edit_link}' class='btn btn-sm btn-ghost'>Edit</a>`;
+                return h;
+              }
+            }
+          ]
+        });
+      }
+    }
+    document.addEventListener("turbo:load", initClassrooms);
+  })();
+</script>

@@ -13,58 +13,25 @@
   </div>
 </div>
 
-<div class="card">
-  <div class="table-container">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Student</th>
-          <th>Amount</th>
-          <th>Due Date</th>
-          <th>Status</th>
-          <th>Receipt #</th>
-          <th class="no-sort">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @fees.each do |fee| %>
-          <tr>
-            <td><%= fee.id %></td>
-            <td><%= fee.student&.full_name || "—" %></td>
-            <td><%= number_to_currency(fee.amount || 0) %></td>
-            <td><%= fee.due_date&.strftime("%B %d, %Y") || "—" %></td>
-            <td>
-              <% if fee.status.present? %>
-                <span class="status-badge status-<%= fee.status %>"><%= fee.status.humanize %></span>
-              <% else %>
-                —
-              <% end %>
-            </td>
-            <td><%= fee.receipt_number.presence || "—" %></td>
-            <td>
-              <%= link_to "View", fee, class: "btn btn-sm" %>
-
-              <% if current_user.admin? || current_user.teacher? %>
-                <%= link_to "Edit", edit_fee_path(fee), class: "btn btn-ghost btn-sm" %>
-              <% end %>
-
-              <% if current_user.admin? %>
-                <%= link_to "Delete", fee,
-                      method: :delete,
-                      data: { confirm: "Delete this fee record?" },
-                      class: "btn btn-ghost btn-sm" %>
-              <% end %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
+<div class="card" style="margin-bottom:24px;">
+   <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+    <div style="flex: 1; min-width: 280px;">
+      <h3 style="font-size: 1rem; margin: 0 0 12px 0;">Payment Status</h3>
+      <div style="height: 200px; position: relative;">
+        <canvas id="feesStatusChart"></canvas>
+      </div>
+    </div>
+    
+    <!-- Optional: Add another chart here if useful, e.g. Monthly Revenue -->
   </div>
+</div>
 
-  <% if @fees.empty? %>
+<div class="card">
+  <% if @fees.any? %>
+    <div id="fees-table"></div>
+  <% else %>
     <div style="padding:18px;">
-      <div class="form-help">No fee records found.</div>
+      <div class="text-frame">No fee records found.</div>
       <% if current_user.admin? || current_user.teacher? %>
         <div style="margin-top:12px;">
           <%= link_to "Create Fee", new_fee_path, class: "btn btn-primary" %>
@@ -73,3 +40,85 @@
     </div>
   <% end %>
 </div>
+
+<script>
+  (function() {
+    let chart = null;
+
+    function initFees() {
+      const tableEl = document.getElementById("fees-table");
+      const canvas = document.getElementById("feesStatusChart");
+
+      if (!tableEl && !canvas) return;
+
+      if (chart) chart.destroy();
+
+      if (canvas) {
+        const pending = <%= Fee.where(status: 'pending').count %>;
+        const paid = <%= Fee.where(status: 'paid').count %>;
+        const overdue = <%= Fee.where(status: 'overdue').count %>;
+
+        chart = new Chart(canvas.getContext('2d'), {
+          type: 'doughnut',
+          data: {
+            labels: ['Paid', 'Pending', 'Overdue'],
+            datasets: [{
+              data: [paid, pending, overdue],
+              backgroundColor: ['#10B981', '#F59E0B', '#EF4444'],
+              borderWidth: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'right' } },
+            cutout: '65%'
+          }
+        });
+      }
+
+      if (tableEl && !tableEl.classList.contains("tabulator")) {
+        const data = [
+          <% @fees.each do |f| %>
+          {
+            id: <%= f.id %>,
+            student: "<%= f.student&.full_name || '—' %>",
+            amount: "<%= number_to_currency(f.amount || 0) %>",
+            due: "<%= f.due_date&.strftime('%B %d, %Y') || '—' %>",
+            status: "<%= f.status || 'unknown' %>",
+            receipt: "<%= f.receipt_number.presence || '—' %>",
+            link: "<%= fee_path(f) %>"
+          },
+          <% end %>
+        ];
+
+        new Tabulator(tableEl, {
+          data: data,
+          layout: "fitColumns",
+          pagination: "local",
+          paginationSize: 15,
+          columns: [
+            { title: "ID", field: "id", width: 60 },
+            { title: "Student", field: "student", widthGrow: 1.5 },
+            { title: "Amount", field: "amount" },
+            { title: "Due Date", field: "due" },
+            { 
+              title: "Status", field: "status",
+              formatter: function(cell) {
+                const val = cell.getValue();
+                return `<span class='status-badge status-${val}'>${val.charAt(0).toUpperCase() + val.slice(1)}</span>`;
+              }
+            },
+            { title: "Receipt #", field: "receipt" },
+            { 
+              title: "Actions", formatter: function(cell) {
+                 return `<a href='${cell.getData().link}' class='btn btn-sm'>View</a>`;
+              } 
+            }
+          ]
+        });
+      }
+    }
+    document.addEventListener("turbo:load", initFees);
+  })();
+</script>

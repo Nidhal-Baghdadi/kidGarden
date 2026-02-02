@@ -13,100 +13,135 @@
   </div>
 </div>
 
-<div class="card" style="margin-bottom:14px;">
-  <%= form_with url: resources_path, method: :get, local: true do |f| %>
-    <div class="form-grid" style="align-items:end;">
-      <div class="form-group">
-        <%= f.label :q, "Search", class: "form-label" %>
-        <%= f.text_field :q, value: params[:q], class: "form-control", placeholder: "Title, subject, category..." %>
-      </div>
+<div class="dashboard-split" style="margin-bottom:24px;">
+  <!-- Filters Card -->
+  <div class="card" style="padding: 20px;">
+    <h3 style="font-size: 1rem; margin: 0 0 16px 0; font-weight: 800;">Search & Filter</h3>
+    <%= form_with url: resources_path, method: :get, local: true do |f| %>
+      <div style="display: grid; gap: 14px;">
+        <div class="form-group" style="margin:0;">
+          <%= f.label :q, "Search Keywords", class: "form-label" %>
+          <%= f.text_field :q, value: params[:q], class: "form-control", placeholder: "Title, subject..." %>
+        </div>
 
-      <div class="form-group">
-        <%= f.label :category, "Category", class: "form-label" %>
-        <%= f.select :category,
-          options_for_select([["All", ""], ["Worksheet", "worksheet"], ["Presentation", "presentation"], ["Video", "video"], ["Audio", "audio"], ["Document", "document"], ["Other", "other"]], params[:category].to_s),
-          {},
-          class: "form-control" %>
-      </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group" style="margin:0;">
+            <%= f.label :category, class: "form-label" %>
+            <%= f.select :category, [["All Categories", ""], ["Worksheet", "worksheet"], ["Presentation", "presentation"], ["Video", "video"], ["Audio", "audio"], ["Document", "document"], ["Other", "other"]], {selected: params[:category]}, {class: "form-control"} %>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <%= f.label :classroom_id, "Classroom", class: "form-label" %>
+            <%= f.select :classroom_id, [["All Classrooms", ""]] + Classroom.order(:name).map { |c| [c.name, c.id] }, {selected: params[:classroom_id]}, {class: "form-control"} %>
+          </div>
+        </div>
 
-      <div class="form-group">
-        <%= f.label :classroom_id, "Classroom", class: "form-label" %>
-        <%= f.select :classroom_id,
-          options_for_select([["All Classrooms", ""]] + Classroom.order(:name).map { |c| [c.name, c.id] }, params[:classroom_id].to_s),
-          {},
-          class: "form-control" %>
+        <div style="display: flex; gap: 10px; margin-top: 6px;">
+          <%= f.submit "Apply Filters", class: "btn btn-primary", style: "flex:1;" %>
+          <%= link_to "Reset", resources_path, class: "btn btn-ghost" %>
+        </div>
       </div>
+    <% end %>
+  </div>
 
-      <div class="form-group" style="display:flex; gap:10px;">
-        <%= f.submit "Filter", class: "btn btn-primary" %>
-        <%= link_to "Reset", resources_path, class: "btn" %>
-      </div>
+  <!-- Resource Categories Chart -->
+  <div class="stat-card">
+    <div class="stat-card__label">Resource Types</div>
+    <div style="height: 200px; position: relative;">
+      <canvas id="resourceTypesChart"></canvas>
     </div>
-  <% end %>
+  </div>
 </div>
 
 <div class="card">
   <% if @resources.any? %>
-    <div class="table-container">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Category</th>
-            <th>Subject</th>
-            <th>Classroom</th>
-            <th>Uploaded By</th>
-            <th>Uploaded</th>
-            <th class="no-sort">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @resources.each do |resource| %>
-            <tr>
-              <td>
-                <div style="font-weight:700;">
-                  <%= link_to resource.title, resource, style: "text-decoration:none;" %>
-                </div>
-                <div class="form-help" style="margin:4px 0 0 0;">
-                  <%= resource.description.present? ? truncate(resource.description, length: 90) : "—" %>
-                </div>
-              </td>
-
-              <td>
-                <span class="status-badge">
-                  <%= resource.category.present? ? resource.category.humanize : "—" %>
-                </span>
-              </td>
-
-              <td><%= resource.subject.presence || "—" %></td>
-              <td><%= resource.classroom&.name || "All Classrooms" %></td>
-              <td><%= resource.user&.name || "System" %></td>
-              <td><%= resource.created_at.strftime("%b %d, %Y") %></td>
-
-              <td>
-                <%= link_to "View", resource, class: "btn btn-sm" %>
-                <% if current_user.admin? || current_user.id == resource.user_id %>
-                  <%= link_to "Edit", edit_resource_path(resource), class: "btn btn-ghost btn-sm" %>
-                  <%= link_to "Delete", resource,
-                        method: :delete,
-                        data: { confirm: "Delete this resource?" },
-                        class: "btn btn-ghost btn-sm" %>
-                <% end %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
+    <div id="resources-table"></div>
   <% else %>
-    <div class="form-help" style="margin:0;">
-      No resources found. Try adjusting filters or upload a new resource.
+    <div class="text-frame" style="width:100%; text-align:center;">
+      No resources found matching your criteria.
     </div>
-
-    <% if current_user.admin? || current_user.teacher? %>
-      <div style="margin-top:12px;">
-        <%= link_to "Upload Resource", new_resource_path, class: "btn btn-primary" %>
-      </div>
-    <% end %>
   <% end %>
 </div>
+
+<script>
+  (function() {
+    let chart = null;
+
+    function initResources() {
+      const tableEl = document.getElementById("resources-table");
+      const canvas = document.getElementById("resourceTypesChart");
+
+      if (!tableEl && !canvas) return;
+
+      if (chart) chart.destroy();
+
+      if (canvas) {
+        // Aggregate categories for chart
+        const cats = {};
+        <% @resources.each do |r| %>
+          cats["<%= r.category || 'other' %>"] = (cats["<%= r.category || 'other' %>"] || 0) + 1;
+        <% end %>
+        
+        chart = new Chart(canvas.getContext('2d'), {
+          type: 'polarArea',
+          data: {
+            labels: Object.keys(cats).map(c => c.charAt(0).toUpperCase() + c.slice(1)),
+            datasets: [{
+              data: Object.values(cats),
+              backgroundColor: ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899']
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'right', labels: { boxWidth: 10 } } }
+          }
+        });
+      }
+
+      if (tableEl && !tableEl.classList.contains("tabulator")) {
+        const data = [
+          <% @resources.each do |r| %>
+          {
+            title: "<%= j r.title %>",
+            category: "<%= j(r.category.present? ? r.category.humanize : '—') %>",
+            subject: "<%= j(r.subject.presence || '—') %>",
+            classroom: "<%= j(r.classroom&.name || 'All Classrooms') %>",
+            author: "<%= j(r.user&.name || 'System') %>",
+            date: "<%= r.created_at.strftime('%b %d, %Y') %>",
+            view_link: "<%= resource_path(r) %>",
+            edit_link: "<%= (current_user.admin? || current_user.id == r.user_id) ? edit_resource_path(r) : '' %>"
+          },
+          <% end %>
+        ];
+
+        new Tabulator(tableEl, {
+          data: data,
+          layout: "fitColumns",
+          pagination: "local",
+          paginationSize: 15,
+          columns: [
+            { title: "Resource", field: "title", widthGrow: 1.5, formatter: "textarea" },
+            { 
+              title: "Category", field: "category",
+              formatter: function(cell) {
+                return `<span class='status-badge'>${cell.getValue()}</span>`;
+              }
+            },
+            { title: "Subject", field: "subject" },
+            { title: "Classroom", field: "classroom" },
+            { title: "Date", field: "date", width: 120 },
+            {
+              title: "Actions", formatter: function(cell) {
+                const d = cell.getData();
+                let h = `<a href='${d.view_link}' class='btn btn-sm'>Open</a>`;
+                if(d.edit_link) h += ` <a href='${d.edit_link}' class='btn btn-sm btn-ghost'>Edit</a>`;
+                return h;
+              }
+            }
+          ]
+        });
+      }
+    }
+    document.addEventListener("turbo:load", initResources);
+  })();
+</script>

@@ -1,91 +1,91 @@
 <% content_for :title, "Messages" %>
 <% other = @conversation.other_participant(current_user) %>
 
-<div class="page-header">
-  <div>
-    <h1 class="page-header__title"><%= @conversation.subject.presence || "Conversation" %></h1>
-    <p class="page-header__subtitle">With <%= other&.name || "Unknown" %></p>
-  </div>
+<div class="messaging-shell">
+  <!-- Sidebar -->
+  <aside class="messaging-sidebar">
+    <div class="messaging-sidebar__header">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="margin:0; font-size:1.2rem; font-weight:800;">Chats</h2>
+        <%= link_to "+", new_user_conversation_path, class: "icon-btn", title: "New Chat" %>
+      </div>
+    </div>
+    
+    <%= render 'conversation_list', conversations: @conversations, unread_counts: @unread_counts, current_conversation: @conversation %>
+  </aside>
 
-  <div class="page-actions">
-    <%= link_to "Back", user_conversations_path, class: "btn" %>
-  </div>
-</div>
-
-<div class="card" style="padding:0;" data-conversation-id="<%= @conversation.id %>">
-  <div id="messages-container" class="messages-thread" data-autoscroll="true">
-    <% @messages.each do |message| %>
-      <% mine = (message.sender_id == current_user.id) %>
-      <% read_at_for_other = mine && other ? message.read_status_for_user(other) : nil %>
-
-      <div class="msg <%= mine ? "msg--mine" : "msg--theirs" %>">
-        <div class="msg__meta">
-          <span class="msg__name"><%= message.sender&.name || "Unknown" %></span>
-          <span class="msg__time"><%= message.created_at.strftime("%I:%M %p") %></span>
-
-          <% if mine %>
-            <span class="msg__status">
-              • <%= read_at_for_other.present? ? "Read" : "Sent" %>
-            </span>
-          <% end %>
+  <!-- Main Chat -->
+  <main class="messaging-main">
+    <header class="messaging-main__header">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="chat-item__avatar" style="height:40px; width:40px; flex:0 0 40px; font-size:1rem;">
+          <%= other&.name&.first&.upcase || "?" %>
         </div>
-
-        <div class="msg__bubble">
-          <%= simple_format(message.content) %>
-
-          <% if message.attachments.attached? %>
-            <div class="msg__attachments">
-              <% message.attachments.each do |file| %>
-                <%= link_to file.filename.to_s, url_for(file), class: "msg__file", target: "_blank", rel: "noopener" %>
-              <% end %>
-            </div>
-          <% end %>
-
-          <% if mine || current_user.admin? %>
-            <div class="msg__actions">
-              <%= link_to "Delete",
-                    message,
-                    data: { turbo_method: :delete, turbo_confirm: "Delete this message?" },
-                    class: "msg__delete" %>
-            </div>
-          <% end %>
+        <div>
+          <div style="font-weight:800; line-height:1.2;"><%= other&.name || "Unknown" %></div>
+          <div style="font-size:0.75rem; color:var(--primary); font-weight:700;">Online</div>
         </div>
       </div>
-    <% end %>
-  </div>
-
-  <div class="composer">
-    <% if @message.errors.any? %>
-      <div class="alert alert--error" style="margin:0 0 12px 0;">
-        <strong><%= pluralize(@message.errors.count, "error") %> prevented sending:</strong>
-        <ul style="margin:8px 0 0 18px;">
-          <% @message.errors.full_messages.each do |m| %>
-            <li><%= m %></li>
-          <% end %>
-        </ul>
+      
+      <div class="messaging-main__actions">
+        <%= link_to user_conversations_path, class: "icon-btn", title: "Close" do %>
+          ✕
+        <% end %>
       </div>
-    <% end %>
+    </header>
 
-    <%= form_with model: @message, url: conversation_messages_path(@conversation), local: true do |form| %>
-      <div class="composer__grid">
-        <div class="form-group" style="margin:0;">
-          <%= form.label :content, "Message", class: "form-label" %>
-          <%= form.text_area :content, placeholder: "Type your message…", class: "form-control", rows: 2 %>
-
-          <div style="margin-top:10px;">
-            <%= form.label :attachments, "Attachments", class: "form-label" %>
-            <%= form.file_field :attachments, multiple: true, class: "form-control" %>
-            <div class="form-help" style="margin-top:6px;">
-              You can attach multiple files.
-            </div>
+    <div id="messages-container" class="messaging-main__messages">
+      <% @messages.each do |message| %>
+        <% mine = (message.sender_id == current_user.id) %>
+        <div class="message-bubble <%= mine ? 'message-bubble--mine' : 'message-bubble--theirs' %>">
+          <div class="message-bubble__content">
+            <%= simple_format(message.content) %>
+            
+            <% if message.attachments.attached? %>
+              <div class="msg__attachments" style="margin-top:8px;">
+                <% message.attachments.each do |file| %>
+                  <%= link_to file.filename.to_s, url_for(file), class: "btn btn-sm", style: "background:rgba(255,255,255,0.2); border:none; color:inherit;", target: "_blank" %>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+          <div class="message-bubble__meta">
+            <%= message.created_at.strftime("%I:%M %p") %>
+            <% if mine %>
+              <span title="Status">• Sent</span>
+            <% end %>
           </div>
         </div>
+      <% end %>
+    </div>
 
-        <div class="composer__actions">
-          <%= form.submit "Send", class: "btn btn-primary" %>
-          <%= link_to "Cancel", user_conversations_path, class: "btn btn-ghost" %>
-        </div>
-      </div>
-    <% end %>
-  </div>
+    <div class="messaging-main__composer">
+      <%= form_with model: @message, url: conversation_messages_path(@conversation), local: true, class: "chat-composer" do |form| %>
+        <%= form.text_area :content, placeholder: "Type a message...", class: "chat-composer__input", rows: 1 %>
+        <%= form.submit "Send", class: "btn btn-primary" %>
+      <% end %>
+    </div>
+  </main>
 </div>
+
+<script>
+  (function() {
+    function scrollToBottom() {
+      const container = document.getElementById("messages-container");
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+
+    document.addEventListener("turbo:load", scrollToBottom);
+    
+    // Auto-expand textarea
+    const tx = document.querySelector(".chat-composer__input");
+    if (tx) {
+      tx.addEventListener("input", function() {
+        this.style.height = "auto";
+        this.style.height = (this.scrollHeight) + "px";
+      });
+    }
+  })();
+</script>

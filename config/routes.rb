@@ -59,6 +59,13 @@ Rails.application.routes.draw do
   # Parent management for admins and teachers
   resources :parents
 
+  # Invoice management
+  resources :invoices do
+    member do
+      get :download_pdf
+    end
+  end
+
   # Profile management
   get 'profile', to: 'profiles#show', as: 'profile'
   get 'profile/edit', to: 'profiles#edit', as: 'edit_profile'

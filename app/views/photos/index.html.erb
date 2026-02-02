@@ -1,162 +1,166 @@
-<% content_for :title, "Photos" %>
+<% content_for :title, "Photo Management" %>
 
 <div class="page-header">
   <div>
-    <h1 class="page-header__title">Photos</h1>
-    <p class="page-header__subtitle">Browse, filter, and manage uploaded photos.</p>
+    <h1 class="page-header__title">Photo Management</h1>
+    <p class="page-header__subtitle">Review, approve, and manage the photo library.</p>
   </div>
 
   <div class="page-actions">
-    <%= link_to "Gallery", gallery_photos_path, class: "btn" %>
-
+    <%= link_to "Public Gallery", gallery_photos_path, class: "btn" %>
     <% if current_user.teacher? || current_user.admin? %>
-      <%= link_to "Upload Photo", new_photo_path, class: "btn btn-primary" %>
+      <%= link_to "Upload New Photo", new_photo_path, class: "btn btn-primary" %>
     <% end %>
   </div>
 </div>
 
-<div class="card" style="margin-bottom:14px;">
+<div class="dashboard-grid">
+  <!-- Photo Stats -->
+  <div class="stat-card">
+    <div class="stat-card__label">Total Photos</div>
+    <div class="stat-card__value"><%= Photo.count %></div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-card__label">Pending Approval</div>
+    <div class="stat-card__value" style="color: var(--warning);"><%= Photo.where(approved: [false, nil]).count %></div>
+  </div>
+
+  <!-- Chart: Photos by Category -->
+  <div class="stat-card" style="grid-column: span 2;">
+    <div class="stat-card__label">Photos by Category</div>
+    <div style="height: 150px; position: relative;">
+      <canvas id="photoCategoryChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Filters Frame -->
+<div class="card" style="margin-top: 24px; margin-bottom: 24px;">
+  <h3 style="font-size: 1rem; margin: 0 0 16px 0; font-weight: 800;">Filters</h3>
   <%= form_with url: photos_path, method: :get, local: true do |form| %>
     <div class="form-grid">
       <div class="form-group">
         <%= form.label :student_id, "Student", class: "form-label" %>
-        <%= form.select :student_id,
-              options_from_collection_for_select(@accessible_students, :id, :full_name, params[:student_id]),
-              { prompt: "All students" },
-              { class: "form-control" } %>
+        <%= form.select :student_id, options_from_collection_for_select(@accessible_students, :id, :full_name, params[:student_id]), { prompt: "All students" }, { class: "form-control" } %>
       </div>
 
       <div class="form-group">
         <%= form.label :classroom_id, "Classroom", class: "form-label" %>
-        <%= form.select :classroom_id,
-              options_from_collection_for_select(@accessible_classrooms, :id, :name, params[:classroom_id]),
-              { prompt: "All classrooms" },
-              { class: "form-control" } %>
+        <%= form.select :classroom_id, options_from_collection_for_select(@accessible_classrooms, :id, :name, params[:classroom_id]), { prompt: "All classrooms" }, { class: "form-control" } %>
       </div>
 
       <div class="form-group">
         <%= form.label :category, "Category", class: "form-label" %>
-        <%= form.select :category,
-              options_for_select(
-                [
-                  ["All categories", ""],
-                  ["Activity", "activity"],
-                  ["Event", "event"],
-                  ["Milestone", "milestone"],
-                  ["Daily Life", "daily_life"]
-                ],
-                params[:category]
-              ),
-              {},
-              { class: "form-control" } %>
-      </div>
-
-      <div class="form-group">
-        <%= form.label :start_date, "From", class: "form-label" %>
-        <%= form.date_field :start_date, value: params[:start_date], class: "form-control" %>
-      </div>
-
-      <div class="form-group">
-        <%= form.label :end_date, "To", class: "form-label" %>
-        <%= form.date_field :end_date, value: params[:end_date], class: "form-control" %>
+        <%= form.select :category, options_for_select([["All", ""], ["Activity", "activity"], ["Event", "event"], ["Milestone", "milestone"], ["Daily Life", "daily_life"]], params[:category]), {}, { class: "form-control" } %>
       </div>
     </div>
 
-    <div class="page-actions" style="justify-content:flex-end; margin-top: 10px;">
-      <%= link_to "Clear", photos_path, class: "btn btn-ghost" %>
-      <%= form.submit "Filter", class: "btn btn-primary" %>
+    <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px;">
+      <%= link_to "Reset", photos_path, class: "btn btn-ghost" %>
+      <%= form.submit "Filter Photos", class: "btn btn-primary" %>
     </div>
   <% end %>
 </div>
 
 <div class="card">
   <% if @photos.any? %>
-    <div class="table-container">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Photo</th>
-            <th>Student</th>
-            <th>Category</th>
-            <th>Visibility</th>
-            <th>Approval</th>
-            <th>Date</th>
-            <th class="no-sort">Actions</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          <% @photos.each do |photo| %>
-            <tr>
-              <td style="width:110px;">
-                <% if photo.image.attached? %>
-                  <%= link_to photo_path(photo) do %>
-                    <%= image_tag url_for(photo.image.variant(resize_to_fill: [96, 72])),
-                                  alt: photo.title.to_s,
-                                  style: "border-radius: 10px; display:block; border:1px solid var(--border);" %>
-                  <% end %>
-                <% else %>
-                  <span class="form-help">—</span>
-                <% end %>
-              </td>
-
-              <td>
-                <div style="font-weight:700;"><%= photo.student&.full_name || "—" %></div>
-                <div class="form-help" style="margin:4px 0 0 0;">
-                  Uploaded by <%= photo.uploaded_by&.name || "Unknown" %>
-                </div>
-              </td>
-
-              <td><%= photo.category.present? ? photo.category.humanize : "—" %></td>
-
-              <td>
-                <% if photo.visible_to_parents? %>
-                  <span class="status-badge status-active">Parents</span>
-                <% else %>
-                  <span class="status-badge">Staff only</span>
-                <% end %>
-              </td>
-
-              <td>
-                <% if photo.respond_to?(:approved) && photo.approved? %>
-                  <span class="status-badge status-paid">Approved</span>
-                <% else %>
-                  <span class="status-badge status-warning">Pending</span>
-                <% end %>
-              </td>
-
-              <td><%= photo.created_at.strftime("%b %d, %Y") %></td>
-
-              <td>
-                <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                  <%= link_to "View", photo_path(photo), class: "btn btn-sm" %>
-
-                  <% if current_user.admin? || photo.uploaded_by == current_user %>
-                    <%= link_to "Edit", edit_photo_path(photo), class: "btn btn-sm" %>
-                    <%= link_to "Delete", photo_path(photo),
-                          data: { turbo_method: :delete, turbo_confirm: "Delete this photo?" },
-                          class: "btn btn-ghost btn-sm" %>
-                  <% end %>
-
-                  <% if (current_user.admin? || current_user.teacher?) && photo.respond_to?(:approved) && !photo.approved? %>
-                    <%= link_to "Approve", approve_photo_path(photo),
-                          data: { turbo_method: :patch, turbo_confirm: "Approve this photo?" },
-                          class: "btn btn-primary btn-sm" %>
-                  <% end %>
-                </div>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
-
-    <% if defined?(paginate) && @photos.respond_to?(:current_page) %>
-      <div style="margin-top:14px;">
-        <%= paginate @photos %>
-      </div>
-    <% end %>
+    <div id="photos-management-table"></div>
   <% else %>
-    <div class="form-help">No photos found.</div>
+    <div class="text-frame" style="width:100%; text-align:center;">No photos found.</div>
   <% end %>
 </div>
+
+<script>
+  (function() {
+    let chart = null;
+
+    function initPhotos() {
+      const tableEl = document.getElementById("photos-management-table");
+      const canvas = document.getElementById("photoCategoryChart");
+
+      if (!tableEl && !canvas) return;
+
+      if (chart) chart.destroy();
+
+      if (canvas) {
+        const cats = {};
+        <% @photos.each do |p| %>
+          cats["<%= p.category || 'unassigned' %>"] = (cats["<%= p.category || 'unassigned' %>"] || 0) + 1;
+        <% end %>
+
+        chart = new Chart(canvas.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: Object.keys(cats).map(c => c.charAt(0).toUpperCase() + c.slice(1)),
+            datasets: [{
+              label: 'Photos',
+              data: Object.values(cats),
+              backgroundColor: '#10B981',
+              borderRadius: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, display: false }, x: { grid: { display: false } } },
+            plugins: { legend: { display: false } }
+          }
+        });
+      }
+
+      if (tableEl && !tableEl.classList.contains("tabulator")) {
+        const data = [
+          <% @photos.each do |p| %>
+          {
+            id: <%= p.id %>,
+            thumb: "<%= p.image.attached? ? url_for(p.image.variant(resize_to_fill: [80, 60])) : '' %>",
+            student: "<%= j(p.student&.full_name || '—') %>",
+            category: "<%= j(p.category.present? ? p.category.humanize : '—') %>",
+            status: "<%= p.approved? ? 'approved' : 'pending' %>",
+            date: "<%= p.created_at.strftime('%b %d, %Y') %>",
+            view_link: "<%= photo_path(p) %>",
+            approve_link: "<%= (current_user.admin? || current_user.teacher?) && !p.approved? ? approve_photo_path(p) : '' %>"
+          },
+          <% end %>
+        ];
+
+        new Tabulator(tableEl, {
+          data: data,
+          layout: "fitColumns",
+          pagination: "local",
+          paginationSize: 10,
+          columns: [
+            {
+              title: "Preview", field: "thumb", width: 100,
+              formatter: function(cell) {
+                const url = cell.getValue();
+                return url ? `<img src="${url}" style="border-radius:6px; width:60px; height:45px; object-fit:cover;">` : "—";
+              }
+            },
+            { title: "Student", field: "student", widthGrow: 1.5 },
+            { title: "Category", field: "category" },
+            {
+              title: "Approval", field: "status",
+              formatter: function(cell) {
+                const val = cell.getValue();
+                return `<span class="status-badge status-${val === 'approved' ? 'paid' : 'warning'}">${val.toUpperCase()}</span>`;
+              }
+            },
+            { title: "Date", field: "date" },
+            {
+              title: "Actions", formatter: function(cell) {
+                const d = cell.getData();
+                let h = `<a href="${d.view_link}" class="btn btn-sm">View</a>`;
+                if(d.approve_link) h += ` <a href="${d.approve_link}" data-turbo-method="patch" class="btn btn-sm btn-primary">Approve</a>`;
+                return h;
+              }
+            }
+          ]
+        });
+      }
+    }
+
+    document.addEventListener("turbo:load", initPhotos);
+  })();
+</script>

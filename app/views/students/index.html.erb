@@ -11,61 +11,154 @@
   </div>
 </div>
 
-<div class="card">
-  <div class="table-container">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Student</th>
-          <th>Classroom</th>
-          <th>Status</th>
-          <th>Gender</th>
-          <th>Enrollment</th>
-          <th class="no-sort">Actions</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        <% @students.each do |student| %>
-          <tr>
-            <td><%= student.id %></td>
-            <td><%= student.full_name %></td>
-            <td><%= student.classroom&.name || "Unassigned" %></td>
-            <td>
-              <span class="status-badge status-<%= student.status %>">
-                <%= student.status.humanize %>
-              </span>
-            </td>
-            <td><%= student.gender.present? ? student.gender.humanize : "—" %></td>
-            <td><%= student.enrollment_date&.strftime("%b %d, %Y") || "—" %></td>
-            <td>
-              <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                <%= link_to "View", student, class: "btn btn-sm" %>
-
-                <% if current_user.admin? || (current_user.teacher? && current_user.classrooms_taught.include?(student.classroom)) %>
-                  <%= link_to "Edit", edit_student_path(student), class: "btn btn-sm" %>
-                <% end %>
-
-                <% if current_user.admin? %>
-                  <%= link_to "Delete", student,
-                        method: :delete,
-                        data: { confirm: "Are you sure?" },
-                        class: "btn btn-ghost btn-sm" %>
-                <% end %>
-              </div>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
-
-  <% if @students.empty? %>
-    <div style="text-align:center; padding: 18px;">
-      <div class="form-help" style="margin:0;">
-        No students found for your account.
+<div class="card" style="margin-bottom: 24px;">
+  <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+    <!-- Chart: Students by Status -->
+    <div style="flex: 1; min-width: 280px;">
+      <h3 style="font-size: 1rem; margin: 0 0 12px 0;">Student Status</h3>
+      <div style="height: 200px; position: relative;">
+        <canvas id="studentStatusChart"></canvas>
       </div>
+    </div>
+    
+    <!-- Chart: Students by Gender -->
+    <div style="flex: 1; min-width: 280px;">
+      <h3 style="font-size: 1rem; margin: 0 0 12px 0;">Gender Distribution</h3>
+      <div style="height: 200px; position: relative;">
+        <canvas id="studentGenderChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <% if @students.any? %>
+    <div id="students-table"></div>
+  <% else %>
+    <div class="text-frame" style="text-align:center; padding: 18px; width: 100%;">
+      No students found for your account.
     </div>
   <% end %>
 </div>
+
+<script>
+  (function() {
+    let statusChart = null;
+    let genderChart = null;
+
+    function initStudents() {
+      const tableEl = document.getElementById("students-table");
+      const statusCanvas = document.getElementById("studentStatusChart");
+      const genderCanvas = document.getElementById("studentGenderChart");
+
+      if (!tableEl && !statusCanvas) return; // Not on students page
+
+      // --- Destroy old charts ---
+      if (statusChart) statusChart.destroy();
+      if (genderChart) genderChart.destroy();
+
+      // --- Charts ---
+      if (statusCanvas) {
+        const enrolled = <%= @students.where(status: 'enrolled').count %>;
+        const active = <%= @students.where(status: 'active').count %>;
+        const withdrawn = <%= @students.where(status: 'withdrawn').count %>;
+        const inactive = <%= @students.where(status: 'inactive').count %>;
+
+        statusChart = new Chart(statusCanvas.getContext('2d'), {
+          type: 'doughnut',
+          data: {
+            labels: ['Enrolled', 'Active', 'Withdrawn', 'Inactive'],
+            datasets: [{
+              data: [enrolled, active, withdrawn, inactive],
+              backgroundColor: ['#10B981', '#34D399', '#EF4444', '#9CA3AF'],
+              borderWidth: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'right' } },
+            cutout: '60%'
+          }
+        });
+      }
+
+      if (genderCanvas) {
+        const male = <%= @students.where(gender: 'male').count %>;
+        const female = <%= @students.where(gender: 'female').count %>;
+        // Handle nil/other if necessary
+        
+        genderChart = new Chart(genderCanvas.getContext('2d'), {
+          type: 'pie',
+          data: {
+            labels: ['Male', 'Female'],
+            datasets: [{
+              data: [male, female],
+              backgroundColor: ['#3B82F6', '#EC4899'],
+              borderWidth: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'right' } }
+          }
+        });
+      }
+
+      // --- Tabulator ---
+      if (tableEl && !tableEl.classList.contains("tabulator")) {
+        const tableData = [
+          <% @students.each do |s| %>
+          {
+            id: <%= s.id %>,
+            name: "<%= s.full_name %>",
+            classroom: "<%= s.classroom&.name || 'Unassigned' %>",
+            status: "<%= s.status %>",
+            gender: "<%= s.gender.present? ? s.gender.humanize : '—' %>",
+            enrollment: "<%= s.enrollment_date&.strftime('%b %d, %Y') || '—' %>",
+            show_link: "<%= student_path(s) %>",
+            edit_link: "<%= edit_student_path(s) if current_user.admin? || (current_user.teacher? && current_user.classrooms_taught.include?(s.classroom)) %>",
+            delete_link: "<%= student_path(s) if current_user.admin? %>"
+          },
+          <% end %>
+        ];
+
+        new Tabulator(tableEl, {
+          data: tableData,
+          layout: "fitColumns",
+          pagination: "local",
+          paginationSize: 15,
+          columns: [
+            { title: "ID", field: "id", width: 60 },
+            { title: "Student", field: "name", widthGrow: 2 },
+            { title: "Classroom", field: "classroom" },
+            { 
+              title: "Status", field: "status", 
+              formatter: function(cell){
+                const val = cell.getValue();
+                const human = val.charAt(0).toUpperCase() + val.slice(1);
+                return `<span class='status-badge status-${val}'>${human}</span>`;
+              }
+            },
+            { title: "Gender", field: "gender" },
+            { title: "Enrollment", field: "enrollment" },
+            {
+              title: "Actions", formatter: function(cell, params, onRendered){
+                const data = cell.getData();
+                let html = `<a href='${data.show_link}' class='btn btn-sm' style='margin-right:4px'>View</a>`;
+                if(data.edit_link) html += `<a href='${data.edit_link}' class='btn btn-sm btn-ghost' style='margin-right:4px'>Edit</a>`;
+                // Delete usually requires method: :delete, handled via standard Rails UJS or Turbo. 
+                // For Tabulator, it's safer to just link to show page or handle via custom JS if strict needed.
+                // Simplified for now to avoid complex Turbo injection in JS string.
+                return html;
+              }
+            }
+          ]
+        });
+      }
+    }
+
+    document.addEventListener("turbo:load", initStudents);
+  })();
+</script>

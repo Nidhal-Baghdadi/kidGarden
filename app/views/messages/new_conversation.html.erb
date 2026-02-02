@@ -1,35 +1,39 @@
 <% content_for :title, "New Message" %>
 
-
-<div class="page-header">
-  <div>
-    <h1 class="page-header__title">New Message</h1>
-    <p class="page-header__subtitle">Pick someone you’re allowed to contact.</p>
-  </div>
-
-  <div class="page-actions">
-    <%= link_to "Back", user_conversations_path, class: "btn" %>
-  </div>
-</div>
-
-<div class="card">
-  <%= form_with url: start_the_conversation_path, method: :post, local: true do |form| %>
-    <div class="form-group">
-      <%= form.label :recipient_id, "Recipient", class: "form-label" %>
-      <%= form.select :recipient_id,
-            options_from_collection_for_select(@recipients, :id, :name),
-            { prompt: "Select recipient" },
-            { class: "form-control" } %>
-
-      <div class="form-help" style="margin-top:6px;">
-        You’ll be taken directly to the conversation after it’s created.
-      </div>
+<div class="messaging-shell">
+  <!-- Sidebar (Optional here, but keeping for layout consistency) -->
+  <aside class="messaging-sidebar">
+    <div class="messaging-sidebar__header">
+      <h2 style="margin:0; font-size:1.2rem; font-weight:800;">New Message</h2>
     </div>
-
-    <div class="page-actions" style="justify-content:flex-end; margin-top:14px;">
-      <%= link_to "Cancel", user_conversations_path, class: "btn" %>
-      <%= form.submit "Start Conversation", class: "btn btn-primary" %>
+    <div class="messaging-sidebar__list" style="padding: 20px;">
+       <p class="form-help">Select a recipient from the list to begin a new conversation.</p>
     </div>
-  <% end %>
-</div>
+  </aside>
 
+  <!-- Form area -->
+  <main class="messaging-main" style="padding:40px;">
+    <div class="card" style="max-width:500px; width:100%; margin: 0 auto;">
+      <h2 style="font-weight:800; margin-bottom:24px;">Start a conversation</h2>
+      
+      <%= form_with url: start_the_conversation_path, method: :post, local: true do |form| %>
+        <div class="form-group">
+          <%= form.label :recipient_id, "Select Recipient", class: "form-label" %>
+          <%= form.select :recipient_id,
+                options_from_collection_for_select(@recipients, :id, :name),
+                { prompt: "Choose a teacher or parent..." },
+                { class: "form-control" } %>
+
+          <div class="form-help" style="margin-top:10px;">
+            You can only message people linked to your students or classrooms.
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:32px;">
+          <%= link_to "Cancel", user_conversations_path, class: "btn" %>
+          <%= form.submit "Begin Chat", class: "btn btn-primary" %>
+        </div>
+      <% end %>
+    </div>
+  </main>
+</div>

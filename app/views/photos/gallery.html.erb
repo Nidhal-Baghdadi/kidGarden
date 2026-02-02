@@ -14,7 +14,7 @@
   </div>
 </div>
 
-<div class="card" style="margin-bottom:14px;">
+<div class="card" style="margin-bottom:24px;">
   <%= form_with url: gallery_photos_path, method: :get, local: true do |form| %>
     <div class="form-grid">
       <div class="form-group">
@@ -59,37 +59,42 @@
 </div>
 
 <% if @photos.any? %>
-  <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px;">
+  <div class="gallery-grid">
     <% @photos.each do |photo| %>
-      <div class="card" style="padding:0; overflow:hidden;">
+      <div class="gallery-card">
         <%= link_to photo_path(photo), style: "text-decoration:none;" do %>
-          <% if photo.image.attached? %>
-            <%= image_tag url_for(photo.image.variant(resize_to_fill: [520, 360])),
-                          alt: photo.title.to_s,
-                          style: "width:100%; height:180px; object-fit:cover; display:block;" %>
-          <% else %>
-            <div class="readonly" style="height:180px; justify-content:center;">No image</div>
-          <% end %>
-
-          <div style="padding:12px;">
-            <div style="display:flex; justify-content:space-between; gap:10px;">
-              <div style="min-width:0;">
-                <div style="font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                  <%= photo.title.presence || "Photo" %>
-                </div>
-                <div class="form-help" style="margin:4px 0 0 0;">
-                  <%= photo.student&.full_name || "—" %>
-                </div>
+          <div class="gallery-card__image-wrap">
+            <% if photo.image.attached? %>
+              <%= image_tag url_for(photo.image.variant(resize_to_fill: [520, 360])),
+                            alt: photo.title.to_s,
+                            class: "gallery-card__image" %>
+            <% else %>
+              <div class="gallery-card__image" style="display:flex; align-items:center; justify-content:center; background:var(--surface-2); color:var(--muted); font-weight:600;">
+                No image
               </div>
+            <% end %>
+          </div>
 
+          <div class="gallery-card__content">
+            <div style="display:flex; justify-content:space-between; gap:10px; margin-bottom:4px;">
+              <div class="gallery-card__title">
+                <%= photo.title.presence || "Photo" %>
+              </div>
               <% if photo.category.present? %>
                 <span class="status-badge"><%= photo.category.humanize %></span>
               <% end %>
             </div>
 
+            <div class="gallery-card__meta">
+              <span><%= photo.student&.full_name || "—" %></span>
+              <% if photo.created_at %>
+                <span style="font-size:0.8rem;"><%= time_ago_in_words(photo.created_at) %> ago</span>
+              <% end %>
+            </div>
+
             <% if photo.description.present? %>
-              <div class="form-help" style="margin-top:8px;">
-                <%= photo.description.to_s.truncate(90) %>
+              <div class="form-help" style="margin-top:8px; line-height:1.4;">
+                <%= photo.description.to_s.truncate(70) %>
               </div>
             <% end %>
           </div>
@@ -99,7 +104,7 @@
   </div>
 
   <% if defined?(paginate) && @photos.respond_to?(:current_page) %>
-    <div style="margin-top:14px;">
+    <div style="margin-top:24px;">
       <%= paginate @photos %>
     </div>
   <% end %>

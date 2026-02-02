@@ -13,76 +13,75 @@
   </div>
 </div>
 
+<div class="dashboard-split" style="margin-bottom:24px;">
+  <div class="stat-card">
+    <div class="stat-card__label">Total Parents</div>
+    <div class="stat-card__value"><%= @parents.size %></div>
+    <div class="stat-card__meta">Linked to Students: <%= @parents.select{|p| p.students_as_parent.any?}.size %></div>
+  </div>
+  
+  <div class="stat-card">
+    <div class="stat-card__label">Communication</div>
+    <div class="text-frame" style="margin-top: 10px;">
+      All parents have access to the Messaging module once registered.
+    </div>
+  </div>
+</div>
+
 <div class="card">
   <% if @parents.any? %>
-    <div class="table-container">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Children</th>
-            <th class="no-sort">Actions</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          <% @parents.each do |parent| %>
-            <tr>
-              <td><%= parent.name %></td>
-              <td><%= parent.email %></td>
-              <td><%= parent.phone.presence || "—" %></td>
-
-              <td>
-                <% if parent.students_as_parent.any? %>
-                  <div style="display:flex; flex-direction:column; gap:4px;">
-                    <% parent.students_as_parent.limit(3).each do |student| %>
-                      <div><%= student.first_name %> <%= student.last_name %></div>
-                    <% end %>
-
-                    <% if parent.students_as_parent.count > 3 %>
-                      <div class="form-help">
-                        …and <%= parent.students_as_parent.count - 3 %> more
-                      </div>
-                    <% end %>
-                  </div>
-                <% else %>
-                  <span class="form-help">No children assigned</span>
-                <% end %>
-              </td>
-
-              <td>
-                <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                  <%= link_to "View", parent, class: "btn btn-sm" %>
-
-                  <% if current_user.admin? %>
-                    <%= link_to "Edit", edit_parent_path(parent), class: "btn btn-sm" %>
-                    <%= link_to "Delete", parent,
-                        method: :delete,
-                        data: { confirm: "Are you sure?" },
-                        class: "btn btn-ghost btn-sm" %>
-                  <% end %>
-                </div>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
-
+    <div id="parents-table"></div>
   <% else %>
-    <div style="text-align:center; padding: 28px 12px;">
-      <div style="font-weight: 750; font-size: 1.05rem;">No parents</div>
-      <div class="form-help" style="margin-top: 6px;">
-        Get started by creating a new parent account.
-      </div>
-
+    <div class="text-frame" style="width:100%; text-align:center; padding: 40px;">
+      <div style="font-weight: 800; font-size: 1.2rem; margin-bottom: 8px;">No Parents Found</div>
+      <p class="form-help">Get started by creating a new parent account.</p>
       <% if current_user.admin? %>
-        <div style="margin-top: 14px;">
-          <%= link_to "Add Parent", new_parent_path, class: "btn btn-primary" %>
-        </div>
+        <%= link_to "Add Parent", new_parent_path, class: "btn btn-primary", style: "margin-top:14px" %>
       <% end %>
     </div>
   <% end %>
 </div>
+
+<script>
+  (function() {
+    function initParents() {
+      const tableEl = document.getElementById("parents-table");
+      if (!tableEl || tableEl.classList.contains("tabulator")) return;
+
+      const data = [
+        <% @parents.each do |p| %>
+        {
+          name: "<%= j p.name %>",
+          email: "<%= j p.email %>",
+          phone: "<%= j(p.phone.presence || '—') %>",
+          children: "<%= j p.students_as_parent.map(&:full_name).join(', ') %>",
+          view_link: "<%= parent_path(p) %>",
+          edit_link: "<%= current_user.admin? ? edit_parent_path(p) : '' %>"
+        },
+        <% end %>
+      ];
+
+      new Tabulator(tableEl, {
+        data: data,
+        layout: "fitColumns",
+        pagination: "local",
+        paginationSize: 15,
+        columns: [
+          { title: "Name", field: "name", widthGrow: 1.2 },
+          { title: "Email", field: "email", widthGrow: 1.2 },
+          { title: "Phone", field: "phone", width: 140 },
+          { title: "Children", field: "children", widthGrow: 1.5, formatter: "textarea" },
+          {
+            title: "Actions", formatter: function(cell) {
+              const d = cell.getData();
+              let h = `<a href='${d.view_link}' class='btn btn-sm'>View</a>`;
+              if(d.edit_link) h += ` <a href='${d.edit_link}' class='btn btn-sm btn-ghost'>Edit</a>`;
+              return h;
+            }
+          }
+        ]
+      });
+    }
+    document.addEventListener("turbo:load", initParents);
+  })();
+</script>

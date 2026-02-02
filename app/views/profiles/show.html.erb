@@ -1,53 +1,115 @@
-<div class="container mx-auto px-4 py-8">
-  <div class="max-w-4xl mx-auto">
-    <div class="card professional-card">
-      <div class="card-title professional-card-title">Profile Information</div>
+<% content_for :title, "My Profile" %>
+
+<div class="content-shell" style="max-width: 1000px; margin: 0 auto;">
+  <div class="page-header">
+    <div>
+      <h1 class="page-header__title">User Profile</h1>
+      <p class="page-header__subtitle">Manage your account information and preferences.</p>
+    </div>
+    <div class="page-actions">
+      <%= link_to "Edit Profile", edit_profile_path, class: "btn btn-primary" %>
+    </div>
+  </div>
+
+  <div class="dashboard-split">
+    <!-- Left Column: Avatar & Summary -->
+    <div class="card" style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;">
+      <div class="profile-avatar">
+        <%= @user.name.first.upcase %>
+      </div>
+      <div>
+        <h2 style="font-weight: 800; margin: 0;"><%= @user.name %></h2>
+        <span class="status-badge status-active" style="margin-top: 8px;">
+          <%= @user.role.humanize %>
+        </span>
+      </div>
+      <div class="text-frame" style="width: 100%;">
+        Member since<br>
+        <strong><%= @user.created_at.strftime("%B %Y") %></strong>
+      </div>
+    </div>
+
+    <!-- Right Column: Details -->
+    <div class="card">
+      <h3 style="font-weight: 800; margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">Contact Information</h3>
       
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="md:col-span-1">
-          <div class="bg-gray-200 border-2 border-dashed rounded-xl w-32 h-32 mx-auto flex items-center justify-center text-gray-500">
-            <%= current_user.name.first.upcase %>
-          </div>
-          <div class="text-center mt-4">
-            <%= link_to "Edit Profile", edit_profile_path, class: "btn professional-btn professional-btn-primary" %>
-          </div>
+      <div class="profile-details">
+        <div class="profile-row">
+          <span class="profile-label">Email Address</span>
+          <span class="profile-value"><%= @user.email %></span>
         </div>
         
-        <div class="md:col-span-2">
-          <div class="space-y-4">
-            <div class="flex">
-              <div class="w-1/3 font-medium text-gray-500">Name</div>
-              <div class="w-2/3"><%= @user.name %></div>
-            </div>
-            
-            <div class="flex">
-              <div class="w-1/3 font-medium text-gray-500">Email</div>
-              <div class="w-2/3"><%= @user.email %></div>
-            </div>
-            
-            <div class="flex">
-              <div class="w-1/3 font-medium text-gray-500">Role</div>
-              <div class="w-2/3"><%= @user.role.humanize %></div>
-            </div>
-            
-            <div class="flex">
-              <div class="w-1/3 font-medium text-gray-500">Phone</div>
-              <div class="w-2/3"><%= @user.phone.presence || 'Not provided' %></div>
-            </div>
-            
-            <div class="flex">
-              <div class="w-1/3 font-medium text-gray-500">Address</div>
-              <div class="w-2/3"><%= @user.address.presence || 'Not provided' %></div>
-            </div>
-            
-            
-            <div class="flex">
-              <div class="w-1/3 font-medium text-gray-500">Member Since</div>
-              <div class="w-2/3"><%= @user.created_at.strftime("%B %d, %Y") %></div>
-            </div>
-          </div>
+        <div class="profile-row">
+          <span class="profile-label">Phone Number</span>
+          <span class="profile-value"><%= @user.phone.presence || "—" %></span>
+        </div>
+
+        <div class="profile-row">
+          <span class="profile-label">Physical Address</span>
+          <span class="profile-value"><%= @user.address.presence || "—" %></span>
+        </div>
+
+        <div class="profile-row">
+          <span class="profile-label">Account ID</span>
+          <span class="profile-value">#<%= @user.id.to_s.rjust(5, '0') %></span>
         </div>
       </div>
+
+      <% if current_user.parent? && current_user.students_as_parent.any? %>
+        <h3 style="font-weight: 800; margin: 32px 0 16px 0; border-bottom: 1px solid var(--border); padding-bottom: 12px;">Linked Students</h3>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <% current_user.students_as_parent.each do |student| %>
+            <div class="text-frame" style="background: var(--primary-light); color: var(--primary-2); border-color: var(--primary);">
+              <strong><%= student.full_name %></strong>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
     </div>
   </div>
 </div>
+
+<style>
+  .profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: var(--primary-light);
+    color: var(--primary);
+    display: grid;
+    place-items: center;
+    font-size: 3rem;
+    font-weight: 800;
+    border: 4px solid var(--surface);
+    box-shadow: var(--shadow-md);
+  }
+
+  .profile-details {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .profile-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--surface-2);
+  }
+
+  .profile-label {
+    color: var(--muted);
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  .profile-value {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  @media (max-width: 768px) {
+    .profile-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+  }
+</style>

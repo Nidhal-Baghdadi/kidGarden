@@ -1,66 +1,80 @@
 <% content_for :title, "Registration Details" %>
 
-<div class="d-flex justify-between items-center mb-4">
-  <h1>Registration Details</h1>
-  <%= link_to "Back to Pending", admin_registrations_path, class: "btn btn-outline" %>
+<div class="page-header">
+  <div>
+    <h1 class="page-header__title">Registration Details</h1>
+    <p class="page-header__subtitle">Verify details before approving.</p>
+  </div>
+
+  <div class="page-actions">
+    <%= link_to "Back to Pending", admin_registrations_path, class: "btn btn-ghost" %>
+  </div>
 </div>
 
-<div class="grid grid-cols-2 mb-4">
+<div class="form-grid" style="margin-bottom: 14px;">
   <div class="card">
-    <h3>User Information</h3>
+    <h3 style="margin-top: 0;">User Information</h3>
+
     <div class="form-group">
-      <label><strong>Name:</strong></label>
-      <p><%= @registration.name %></p>
+      <div class="form-label">Name</div>
+      <div class="readonly"><%= @registration.name %></div>
     </div>
+
     <div class="form-group">
-      <label><strong>Email:</strong></label>
-      <p><%= @registration.email %></p>
+      <div class="form-label">Email</div>
+      <div class="readonly"><%= @registration.email %></div>
     </div>
+
     <div class="form-group">
-      <label><strong>Requested Role:</strong></label>
-      <p>
-        <% case @registration.role_request %>
-          <% when 'teacher_request' %>
-            Teacher
-          <% when 'parent_request' %>
-            Parent
-          <% when 'staff_request' %>
-            Staff
-          <% else %>
-            N/A
-        <% end %>
-      </p>
+      <div class="form-label">Requested Role</div>
+      <div class="readonly">
+        <%=
+          case @registration.role_request
+          when "teacher_request" then "Teacher"
+          when "parent_request"  then "Parent"
+          when "staff_request"   then "Staff"
+          else "N/A"
+          end
+        %>
+      </div>
     </div>
+
     <div class="form-group">
-      <label><strong>Registration Date:</strong></label>
-      <p><%= @registration.created_at.strftime("%B %d, %Y at %I:%M %p") %></p>
+      <div class="form-label">Registration Date</div>
+      <div class="readonly"><%= @registration.created_at.strftime("%B %d, %Y at %I:%M %p") %></div>
     </div>
   </div>
 
   <div class="card">
-    <h3>Verification Information</h3>
+    <h3 style="margin-top: 0;">Verification</h3>
+
     <div class="form-group">
-      <label><strong>Verification Code:</strong></label>
-      <p><%= @registration.verification_code %></p>
+      <div class="form-label">Verification Code</div>
+      <div class="readonly"><%= @registration.verification_code %></div>
     </div>
+
     <div class="form-group">
-      <label><strong>Account Status:</strong></label>
-      <p>
+      <div class="form-label">Account Status</div>
+      <div>
         <% if @registration.approved? %>
           <span class="status-badge status-active">Approved</span>
         <% else %>
           <span class="status-badge status-inactive">Pending Approval</span>
         <% end %>
-      </p>
+      </div>
     </div>
   </div>
 </div>
 
-<div class="d-flex justify-between">
-  <%= link_to "Approve Registration", approve_admin_registration_path(@registration), method: :patch,
+<div class="page-actions">
+  <%= link_to "Approve",
+              approve_admin_registration_path(@registration),
               class: "btn btn-primary",
-              confirm: "Are you sure you want to approve this registration?" %>
-  <%= link_to "Reject Registration", reject_admin_registration_path(@registration), method: :patch,
-              class: "btn btn-danger",
-              confirm: "Are you sure you want to reject this registration?" %>
+              data: { turbo_method: :patch, turbo_confirm: "Approve this registration?" } %>
+
+  <%= link_to "Reject",
+              reject_admin_registration_path(@registration),
+              class: "btn",
+              style: "border-color: rgba(180,35,24,.35); color: var(--danger);",
+              data: { turbo_method: :patch, turbo_confirm: "Reject and delete this user?" } %>
 </div>

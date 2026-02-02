@@ -7,6 +7,8 @@ class MessagesController < ApplicationController
   def index
     return unless @conversation
 
+    load_conversations_for_sidebar
+
     @messages =
       @conversation
         .messages
@@ -31,12 +33,10 @@ class MessagesController < ApplicationController
       return
     end
 
-    if @message.save
-      # Set delivered_at if that column exists (no assumptions)
-      if @message.has_attribute?(:delivered_at) && @message.delivered_at.blank?
-        @message.update(delivered_at: Time.current)
-      end
+    # Set delivered_at before saving to avoid extra update that might interfere with callbacks
+    @message.delivered_at = Time.current if @message.has_attribute?(:delivered_at) && @message.delivered_at.blank?
 
+    if @message.save
       if @conversation.has_attribute?(:last_activity_at)
         @conversation.update(last_activity_at: Time.current)
       else
@@ -45,6 +45,7 @@ class MessagesController < ApplicationController
 
       redirect_to conversation_messages_path(@conversation), notice: "Message sent successfully."
     else
+      load_conversations_for_sidebar
       @messages =
         @conversation
           .messages
@@ -89,6 +90,53 @@ class MessagesController < ApplicationController
 
   # GET /conversations  (named route: user_conversations)
   def conversations
+    load_conversations_for_sidebar
+  end
+
+
+  # GET /conversations/new (named route: new_user_conversation)
+  def new_conversation
+    recipients_relation = determine_available_recipients
+
+    puts "recipients_relation"
+
+    puts recipients_relation
+
+
+    @recipients = recipients_relation ? recipients_relation.order(:name) : User.none
+
+    # Convert to array to ensure compatibility with options_from_collection_for_select
+    @recipients = @recipients.to_a
+
+    unless @recipients.any?
+      redirect_to user_conversations_path, alert: "No available recipients to message."
+      return
+    end
+  end
+
+  # POST /start_conversation
+  def start_conversation
+    recipients_relation = determine_available_recipients
+    recipient = recipients_relation&.find_by(id: params[:recipient_id])
+
+    unless recipient
+      redirect_to user_conversations_path, alert: "Recipient not found or not allowed."
+      return
+    end
+
+    conversation = Conversation.between(current_user, recipient)
+
+    unless conversation&.persisted?
+      redirect_to user_conversations_path, alert: "Failed to create conversation."
+      return
+    end
+
+    redirect_to conversation_messages_path(conversation)
+  end
+
+  private
+
+  def load_conversations_for_sidebar
     @conversations =
       Conversation
         .joins(:conversation_participants)
@@ -113,37 +161,6 @@ class MessagesController < ApplicationController
           .count
       end
   end
-
-  # GET /conversations/new (named route: new_user_conversation)
-  def new_conversation
-    @recipients = determine_available_recipients.order(:name)
-
-    unless @recipients.any?
-      redirect_to user_conversations_path, alert: "No available recipients to message."
-      return
-    end
-  end
-
-  # POST /start_conversation
-  def start_conversation
-    recipient = determine_available_recipients.find_by(id: params[:recipient_id])
-
-    unless recipient
-      redirect_to user_conversations_path, alert: "Recipient not found or not allowed."
-      return
-    end
-
-    conversation = Conversation.between(current_user, recipient)
-
-    unless conversation&.persisted?
-      redirect_to user_conversations_path, alert: "Failed to create conversation."
-      return
-    end
-
-    redirect_to conversation_messages_path(conversation)
-  end
-
-  private
 
   def set_conversation
     @conversation = Conversation.find(params[:conversation_id] || params[:id])
@@ -239,46 +256,49 @@ class MessagesController < ApplicationController
   # ===== Recipient rules (your logic, cleaned but not changed in meaning) =====
 
   def determine_available_recipients
-    case current_user.role
-    when "parent"
-      classroom_ids =
-        current_user.students_as_parent
-                    .where.not(classroom_id: nil)
-                    .distinct
-                    .pluck(:classroom_id)
+    begin
+      case current_user.role
+      when "parent"
+        classroom_ids =
+          current_user.students_as_parent
+                      .where.not(classroom_id: nil)
+                      .distinct
+                      .pluck(:classroom_id)
 
-      return User.none if classroom_ids.empty?
+        return User.none if classroom_ids.empty?
 
-      User.where(role: "teacher")
-          .joins(:classrooms_taught)
-          .where(classrooms: { id: classroom_ids })
-          .where.not(id: current_user.id)
-          .distinct
+        User.where(role: "teacher")
+            .joins(:classrooms_taught)
+            .where(classrooms: { id: classroom_ids })
+            .where.not(id: current_user.id)
+            .distinct
 
-    when "teacher"
-      return User.none unless current_user.classrooms_taught.exists?
+      when "teacher"
+        return User.none unless current_user.classrooms_taught.exists?
 
-      student_ids =
-        current_user.classrooms_taught
-                    .joins(:students)
-                    .distinct
-                    .pluck("students.id")
+        student_ids =
+          current_user.classrooms_taught
+                      .joins(:students)
+                      .distinct
+                      .pluck("students.id")
 
-      return User.none if student_ids.empty?
+        return User.none if student_ids.empty?
 
-      User.where(role: "parent")
-          .joins(:students_as_parent)
-          .where(students: { id: student_ids })
-          .where.not(id: current_user.id)
-          .distinct
+        User.where(role: "parent")
+            .joins(:students_as_parent)
+            .where(students: { id: student_ids })
+            .where.not(id: current_user.id)
+            .distinct
 
-    when "admin"
-      User.where.not(id: current_user.id)
+      when "admin"
+        User.where.not(id: current_user.id)
 
-    else
+      else
+        User.none
+      end
+    rescue StandardError => e
+      Rails.logger.error "Error determining available recipients: #{e.message}"
       User.none
     end
-  rescue StandardError
-    User.none
   end
 end

@@ -1,0 +1,2 @@
+<%= turbo_stream.remove dom_id(@registration) %>
+<%= turbo_stream.replace "flash", partial: "shared/flash", locals: { notice: "Registration approved successfully!" } %>

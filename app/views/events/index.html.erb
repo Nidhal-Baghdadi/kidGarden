@@ -3,58 +3,69 @@
 <div class="page-header">
   <div>
     <h1 class="page-header__title">Events</h1>
-    <p class="page-header__subtitle">School calendar and announcements.</p>
+    <p class="page-header__subtitle">Manage school calendar and upcoming events.</p>
   </div>
 
   <div class="page-actions">
-    <%= link_to "New Event", new_event_path, class: "btn btn-primary" %>
+    <% if current_user.admin? || current_user.teacher? %>
+      <%= link_to "New Event", new_event_path, class: "btn btn-primary" %>
+    <% end %>
   </div>
 </div>
 
 <div class="card">
-  <div class="table-container">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Title</th>
-          <th>Start</th>
-          <th>End</th>
-          <th>Location</th>
-          <th>Organizer</th>
-          <th class="no-sort">Actions</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        <% @events.each do |event| %>
-          <tr>
-            <td><%= event.id %></td>
-            <td><%= event.title %></td>
-            <td><%= event.start_time&.strftime("%b %d, %Y %I:%M %p") || "—" %></td>
-            <td><%= event.end_time&.strftime("%b %d, %Y %I:%M %p") || "—" %></td>
-            <td><%= event.location.presence || "—" %></td>
-            <td><%= event.organizer&.name || "—" %></td>
-            <td>
-              <%= link_to "View", event, class: "btn btn-sm" %>
-              <%= link_to "Edit", edit_event_path(event), class: "btn btn-ghost btn-sm" %>
-              <%= link_to "Delete", event,
-                    method: :delete,
-                    data: { confirm: "Delete this event?" },
-                    class: "btn btn-ghost btn-sm" %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
-
-  <% if @events.empty? %>
+  <% if @events.any? %>
+    <div id="events-table"></div>
+  <% else %>
     <div style="padding:18px;">
-      <div class="form-help">No events yet.</div>
-      <div style="margin-top:12px;">
-        <%= link_to "Create Event", new_event_path, class: "btn btn-primary" %>
-      </div>
+      <div class="text-frame">No events found.</div>
+      <% if current_user.admin? || current_user.teacher? %>
+        <div style="margin-top:12px;">
+          <%= link_to "Create Event", new_event_path, class: "btn btn-primary" %>
+        </div>
+      <% end %>
     </div>
   <% end %>
 </div>
+
+<script>
+  (function() {
+    function initEvents() {
+      const tableEl = document.getElementById("events-table");
+      if (!tableEl || tableEl.classList.contains("tabulator")) return;
+
+      const data = [
+        <% @events.each do |e| %>
+        {
+          title: "<%= e.title %>",
+          start: "<%= e.start_time.strftime('%b %d, %Y %I:%M %p') %>",
+          end: "<%= e.end_time.strftime('%b %d, %Y %I:%M %p') %>",
+          location: "<%= e.location.presence || '—' %>",
+          description: "<%= e.description.to_s.truncate(50) %>",
+          link: "<%= event_path(e) %>"
+        },
+        <% end %>
+      ];
+
+      new Tabulator(tableEl, {
+        data: data,
+        layout: "fitColumns",
+        pagination: "local",
+        paginationSize: 15,
+        columns: [
+          { title: "Event", field: "title", widthGrow: 1.5, formatter: "textarea" },
+          { title: "Start", field: "start", width: 160 },
+          { title: "End", field: "end", width: 160 },
+          { title: "Location", field: "location" },
+          { title: "Description", field: "description" },
+          { 
+            title: "Actions", formatter: function(cell) {
+               return `<a href='${cell.getData().link}' class='btn btn-sm'>View</a>`;
+            } 
+          }
+        ]
+      });
+    }
+    document.addEventListener("turbo:load", initEvents);
+  })();
+</script>

@@ -230,6 +230,7 @@ GEM
     parser (3.3.10.0)
       ast (~> 2.4.1)
       racc
+    pdf-core (0.9.0)
     pg (1.6.2)
     pg (1.6.2-aarch64-linux)
     pg (1.6.2-aarch64-linux-musl)
@@ -239,6 +240,11 @@ GEM
     pg (1.6.2-x86_64-linux-musl)
     pp (0.6.3)
       prettyprint
+    prawn (2.4.0)
+      pdf-core (~> 0.9.0)
+      ttfunk (~> 1.7)
+    prawn-table (0.2.2)
+      prawn (>= 1.3.0, < 3.0.0)
     prettyprint (0.2.0)
     prism (1.6.0)
     propshaft (1.3.1)
@@ -381,13 +387,9 @@ GEM
       railties (>= 6.0.0)
     stringio (3.2.0)
     thor (1.5.0)
-    thruster (0.1.16)
-    thruster (0.1.16-aarch64-linux)
-    thruster (0.1.16-arm64-darwin)
-    thruster (0.1.16-x86_64-darwin)
-    thruster (0.1.16-x86_64-linux)
     timeout (0.4.4)
     tsort (0.2.0)
+    ttfunk (1.7.0)
     turbo-rails (2.0.20)
       actionpack (>= 7.1.0)
       railties (>= 7.1.0)
@@ -441,6 +443,8 @@ DEPENDENCIES
   kamal
   kaminari
   pg (~> 1.1)
+  prawn
+  prawn-table
   propshaft
   puma (>= 5.0)
   rails (~> 8.0.4)
@@ -452,7 +456,6 @@ DEPENDENCIES
   solid_cache
   solid_queue
   stimulus-rails
-  thruster
   turbo-rails
   tzinfo-data
   web-console

@@ -1,133 +1,239 @@
 <% content_for :title, "Dashboard" %>
 
-<div style="display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:16px;">
+<div class="page-header">
   <div>
-    <div style="font-size:0.9rem; color:var(--muted); font-weight:600;">Welcome back</div>
-    <div style="font-size:1.6rem; font-weight:700; letter-spacing:-0.02em;"><%= current_user.name %></div>
+    <div style="font-size:0.95rem; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px;">Welcome back</div>
+    <div style="font-size:2rem; font-weight:800; letter-spacing:-0.02em; color:var(--text);"><%= current_user.name %></div>
   </div>
-  <div style="display:flex; gap:10px;">
+  <div class="page-actions">
     <%= link_to "Students", students_path, class: "btn" %>
     <%= link_to "Attendance", attendances_path, class: "btn btn-primary" %>
   </div>
 </div>
 
-<div style="display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:14px; margin-bottom:14px;">
-  <div class="card">
-    <div style="color:var(--muted); font-size:0.85rem; font-weight:650;">Total Students</div>
-    <div style="font-size:1.6rem; font-weight:750; margin-top:6px;"><%= Student.count %></div>
-    <div style="color:var(--muted); margin-top:4px;">Enrolled: <%= Student.where(status: 'enrolled').count %></div>
+<div class="dashboard-grid">
+  <div class="stat-card">
+    <div class="stat-card__label">Total Students</div>
+    <div class="stat-card__value"><%= Student.count %></div>
+    <div class="stat-card__meta">Enrolled: <%= Student.where(status: 'enrolled').count %></div>
   </div>
 
-  <div class="card">
-    <div style="color:var(--muted); font-size:0.85rem; font-weight:650;">Active Classrooms</div>
-    <div style="font-size:1.6rem; font-weight:750; margin-top:6px;"><%= Classroom.count %></div>
-    <div style="color:var(--muted); margin-top:4px;">Teachers: <%= User.where(role: 'teacher').count %></div>
+  <div class="stat-card">
+    <div class="stat-card__label">Active Classrooms</div>
+    <div class="stat-card__value"><%= Classroom.count %></div>
+    <div class="stat-card__meta">Teachers: <%= User.where(role: 'teacher').count %></div>
   </div>
 
-  <div class="card">
-    <div style="color:var(--muted); font-size:0.85rem; font-weight:650;">Today’s Attendance</div>
-    <div style="font-size:1.6rem; font-weight:750; margin-top:6px;"><%= Attendance.where(date: Date.current).count %></div>
-    <div style="color:var(--muted); margin-top:4px;">Absent: <%= Attendance.where(date: Date.current, status: 'absent').count %></div>
+  <!-- Chart Card 1 -->
+  <div class="stat-card" style="grid-column: span 1;">
+    <div class="stat-card__label">Today's Attendance</div>
+    <div style="position: relative; height: 160px; width: 100%;">
+      <canvas id="attendanceChart"></canvas>
+    </div>
   </div>
 
-  <div class="card">
-    <div style="color:var(--muted); font-size:0.85rem; font-weight:650;">Outstanding Fees</div>
-    <div style="font-size:1.6rem; font-weight:750; margin-top:6px;"><%= Fee.where(status: 'pending').count %></div>
-    <div style="color:var(--muted); margin-top:4px;">Overdue: <%= Fee.where(status: 'overdue').count %></div>
+  <!-- Chart Card 2 -->
+  <div class="stat-card" style="grid-column: span 1;">
+    <div class="stat-card__label">Outstanding Fees</div>
+    <div style="position: relative; height: 160px; width: 100%;">
+      <canvas id="feesChart"></canvas>
+    </div>
   </div>
 </div>
 
-<div style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:14px; margin-bottom:14px;">
+<div class="dashboard-split">
+  <!-- Recent Students Table -->
   <div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-      <div style="font-weight:700;">Recent Students</div>
-      <%= link_to "View all", students_path, class: "btn btn-sm" %>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <div style="font-weight:800; font-size:1.1rem;">Recent Students</div>
+      <%= link_to "View all", students_path, class: "btn btn-sm btn-ghost" %>
     </div>
-
+    
     <% if @recent_students.any? %>
-      <div class="table-container">
-        <table class="table">
-          <thead>
-            <tr><th>Student</th><th>Classroom</th><th>Status</th></tr>
-          </thead>
-          <tbody>
-            <% @recent_students.each do |student| %>
-              <tr>
-                <td><strong><%= student.first_name %> <%= student.last_name %></strong></td>
-                <td><%= student.classroom&.name || "Unassigned" %></td>
-                <td><span class="status-badge status-<%= student.status || 'inactive' %>"><%= (student.status || "Unknown").humanize %></span></td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
+      <div id="recent-students-table"></div>
     <% else %>
-      <div style="color:var(--muted); padding:8px 0;">No students found.</div>
+      <div class="text-frame">No students found.</div>
     <% end %>
   </div>
 
+  <!-- Upcoming Events Table -->
   <div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-      <div style="font-weight:700;">Today’s Attendance</div>
-      <%= link_to "View all", attendances_path, class: "btn btn-sm" %>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <div style="font-weight:800; font-size:1.1rem;">Upcoming Events</div>
+      <%= link_to "View all", events_path, class: "btn btn-sm btn-ghost" %>
     </div>
 
-    <% if @todays_attendance.any? %>
-      <div class="table-container">
-        <table class="table">
-          <thead>
-            <tr><th>Student</th><th>Status</th><th>Notes</th></tr>
-          </thead>
-          <tbody>
-            <% @todays_attendance.each do |attendance| %>
-              <tr>
-                <td><strong><%= attendance.student&.first_name %> <%= attendance.student&.last_name %></strong></td>
-                <td><span class="status-badge status-<%= attendance.status || 'inactive' %>"><%= (attendance.status || "Unknown").humanize %></span></td>
-                <td><%= attendance.notes&.truncate(32) || "—" %></td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
+    <% upcoming_events = Event.where('start_time > ?', DateTime.current).order(:start_time).limit(5) %>
+    <% if upcoming_events.any? %>
+      <div id="upcoming-events-table"></div>
     <% else %>
-      <div style="color:var(--muted); padding:8px 0;">No attendance records for today.</div>
+      <div class="text-frame">No upcoming events.</div>
     <% end %>
   </div>
 </div>
 
-<div class="card">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-    <div style="font-weight:700;">Upcoming Events</div>
-    <%= link_to "View all", events_path, class: "btn btn-sm" %>
-  </div>
+<!-- Initialization Script -->
+<script>
+  (function() {
+    let attendanceChart = null;
+    let feesChart = null;
 
-  <% upcoming_events = Event.where('start_time > ?', DateTime.current).order(:start_time).limit(5) %>
-  <% if upcoming_events.any? %>
-    <div class="table-container">
-      <table class="table">
-        <thead>
-          <tr><th>Event</th><th>Date</th><th>Time</th><th>Location</th></tr>
-        </thead>
-        <tbody>
-          <% upcoming_events.each do |event| %>
-            <tr>
-              <td><strong><%= event.title %></strong></td>
-              <td><%= event.start_time.strftime("%b %d, %Y") %></td>
-              <td><%= event.start_time.strftime("%I:%M %p") %> – <%= event.end_time.strftime("%I:%M %p") %></td>
-              <td><%= event.location.presence || "—" %></td>
-            </tr>
+    function initDashboard() {
+      // --- Charts ---
+      
+      const attendanceCanvas = document.getElementById('attendanceChart');
+      const feesCanvas = document.getElementById('feesChart');
+
+      // Only run if elements exist (we are on dashboard)
+      if (!attendanceCanvas || !feesCanvas) return;
+
+      // Destroy existing instances to prevent memory leaks/glitches on navigation
+      if (attendanceChart) attendanceChart.destroy();
+      if (feesChart) feesChart.destroy();
+
+      // 1. Attendance Doughnut Chart
+      const presentCount = <%= Attendance.where(date: Date.current, status: 'present').count %>;
+      const absentCount = <%= Attendance.where(date: Date.current, status: 'absent').count %>;
+      const dataPresent = presentCount || 0; 
+      const dataAbsent = absentCount || 0;
+      const dataNone = (dataPresent + dataAbsent === 0) ? 1 : 0; 
+
+      attendanceChart = new Chart(attendanceCanvas.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Present', 'Absent', 'No Data'],
+          datasets: [{
+            data: [dataPresent, dataAbsent, dataNone],
+            backgroundColor: ['#10B981', '#EF4444', '#E5E7EB'],
+            borderWidth: 0,
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'right',
+              labels: {
+                boxWidth: 12,
+                usePointStyle: true,
+                font: { family: "'Nunito', sans-serif", size: 11 }
+              }
+            }
+          },
+          cutout: '70%'
+        }
+      });
+
+      // 2. Fees Status Chart (Bar)
+      const pendingFees = <%= Fee.where(status: 'pending').count %>;
+      const overdueFees = <%= Fee.where(status: 'overdue').count %>;
+      const paidFees = <%= Fee.where(status: 'paid').count %>;
+
+      feesChart = new Chart(feesCanvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: ['Paid', 'Pending', 'Overdue'],
+          datasets: [{
+            label: 'Fees',
+            data: [paidFees, pendingFees, overdueFees],
+            backgroundColor: ['#10B981', '#F59E0B', '#EF4444'],
+            borderRadius: 4,
+            barThickness: 20
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true, display: false },
+            x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      // --- Tabulator Tables ---
+
+      // 1. Recent Students
+      const studentsTableEl = document.getElementById("recent-students-table");
+      if (studentsTableEl && !studentsTableEl.classList.contains("tabulator")) {
+        <% if @recent_students.any? %>
+        const studentsData = [
+          <% @recent_students.each do |s| %>
+          { 
+            name: "<%= s.first_name %> <%= s.last_name %>", 
+            classroom: "<%= s.classroom&.name || 'Unassigned' %>", 
+            status: "<%= (s.status || 'Unknown').humanize %>",
+            link: "<%= student_path(s) %>"
+          },
           <% end %>
-        </tbody>
-      </table>
-    </div>
-  <% else %>
-    <div style="color:var(--muted); padding:8px 0;">No upcoming events.</div>
-  <% end %>
-</div>
+        ];
 
-<style>
-  @media (max-width: 900px) {
-    div[style*="grid-template-columns:repeat(4"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-    div[style*="grid-template-columns:repeat(2"] { grid-template-columns: 1fr !important; }
-  }
-</style>
+        new Tabulator(studentsTableEl, {
+          data: studentsData,
+          layout: "fitColumns",
+          height: "300px",
+          columns: [
+            { title: "Student Name", field: "name", widthGrow: 2 },
+            { title: "Classroom", field: "classroom" },
+            { 
+              title: "Status", 
+              field: "status",
+              formatter: function(cell) {
+                const val = cell.getValue();
+                let colorClass = "status-inactive";
+                if(val === "Enrolled") colorClass = "status-enrolled";
+                return `<span class='status-badge ${colorClass}'>${val}</span>`;
+              }
+            }
+          ],
+          rowClick:function(e, row){
+            // Navigate on row click
+             window.location.href = row.getData().link;
+          }
+        });
+        <% end %>
+      }
+
+      // 2. Upcoming Events
+      const eventsTableEl = document.getElementById("upcoming-events-table");
+      if (eventsTableEl && !eventsTableEl.classList.contains("tabulator")) {
+        <% if upcoming_events.any? %>
+        const eventsData = [
+          <% upcoming_events.each do |e| %>
+          {
+            title: "<%= e.title %>",
+            date: "<%= e.start_time.strftime('%b %d') %>",
+            time: "<%= e.start_time.strftime('%I:%M %p') %>",
+            location: "<%= e.location.presence || '—' %>",
+            link: "<%= event_path(e) %>"
+          },
+          <% end %>
+        ];
+
+        new Tabulator(eventsTableEl, {
+          data: eventsData,
+          layout: "fitColumns",
+          height: "300px",
+          columns: [
+            { title: "Event", field: "title", widthGrow: 2, formatter: "textarea" },
+            { title: "Date", field: "date", width: 80 },
+            { title: "Time", field: "time", width: 100 },
+            { title: "Location", field: "location" }
+          ],
+          rowClick:function(e, row){
+             window.location.href = row.getData().link;
+          }
+        });
+        <% end %>
+      }
+    }
+
+    // Initialize on both Turbo Load (navigation) and DOMContentLoaded (hard refresh)
+    document.addEventListener("turbo:load", initDashboard);
+    // document.addEventListener("DOMContentLoaded", initDashboard); // turbo:load usually handles this too in Rails 7+
+  })();
+</script>

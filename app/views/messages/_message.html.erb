@@ -1,10 +1,10 @@
-<div class="msg" data-message-id="<%= message.id %>" data-sender-id="<%= message.sender_id %>">
+<div class="msg-wrapper" data-message-id="<%= message.id %>" data-sender-id="<%= message.sender_id %>" data-recipient-id="<%= message.recipient_id %>">
   <div class="msg__meta">
     <span class="msg__name"><%= message.sender&.name || "Unknown" %></span>
     <span class="msg__time"><%= message.created_at.strftime("%I:%M %p") %></span>
   </div>
 
-  <div class="msg__bubble">
+  <div class="msg__content">
     <%= simple_format(message.content) %>
 
     <% if message.attachments.attached? %>

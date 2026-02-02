@@ -5,7 +5,7 @@ class Invoice < ApplicationRecord
   has_many :invoice_items, dependent: :destroy
   has_many :fees, through: :invoice_items
 
-  enum status: { pending: 0, paid: 1, overdue: 2, cancelled: 3, partially_paid: 4 }
+  enum :status, %w[pending paid overdue cancelled partially_paid]
 
   validates :month, presence: true, numericality: { greater_than: 0, less_than: 13 }
   validates :year, presence: true, numericality: { greater_than: 2000, less_than: 2100 }

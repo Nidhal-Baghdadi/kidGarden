@@ -1,4 +1,4 @@
-<% content_for :title, "Calendar" %>
+<% content_for :title, "School Calendar" %>
 
 <div class="page-header">
   <div>
@@ -7,608 +7,292 @@
   </div>
 </div>
 
-<div class="card" style="margin-bottom:14px;">
+<!-- Main Calendar Frame -->
+<div class="card" style="margin-bottom:24px; padding: 24px;">
   <div class="calendar">
     <div class="calendar__top">
-      <div class="calendar__title">
-        <div class="calendar__month" id="current-month-year"></div>
-        <div class="calendar__hint">Click an item to view details.</div>
+      <div>
+        <div class="calendar__month" id="current-month-year">Select a Month</div>
+        <div class="text-frame" style="margin-top: 8px; font-size: 0.85rem;">
+          Click an item to view details.
+        </div>
       </div>
 
       <div class="calendar__controls">
-        <button id="prev-month" class="btn btn-ghost" type="button">‹ Prev</button>
+        <button id="prev-month" class="btn btn-ghost" type="button">‹ Previous</button>
         <button id="next-month" class="btn btn-ghost" type="button">Next ›</button>
       </div>
     </div>
 
-    <div id="calendar-grid" class="calendar__grid" aria-label="Calendar grid"></div>
+    <div id="calendar-grid" class="calendar__grid" aria-label="Calendar grid" style="min-height: 400px;">
+      <!-- Grid will be rendered by JS -->
+    </div>
   </div>
 </div>
 
-<div class="form-grid">
+<!-- Lists Frame -->
+<div class="dashboard-split">
   <div class="card">
-    <div class="page-header" style="margin-bottom:10px;">
-      <div>
-        <h2 class="page-header__title" style="font-size:1.05rem;">Curriculum Schedule</h2>
-        <p class="page-header__subtitle">Upcoming curriculum items.</p>
-      </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <div style="font-weight:800; font-size:1.1rem;">Curriculum Schedule</div>
     </div>
-
+    
     <% if @curriculums.any? %>
-      <div class="table-container">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Subject</th>
-              <th>Title</th>
-              <th>Date & Time</th>
-              <th>Classroom</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% @curriculums.each do |curriculum| %>
-              <tr>
-                <td><%= curriculum.subject %></td>
-                <td><%= curriculum.title %></td>
-                <td>
-                  <%= curriculum.start_time.strftime("%b %d, %Y") %><br>
-                  <span class="form-help">
-                    <%= curriculum.start_time.strftime("%I:%M %p") %> – <%= curriculum.end_time.strftime("%I:%M %p") %>
-                  </span>
-                </td>
-                <td><%= curriculum.classroom&.name || "—" %></td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
+      <div id="curriculum-table"></div>
     <% else %>
-      <div class="form-help">No curriculum scheduled.</div>
+      <div class="text-frame" style="width:100%;">No curriculum scheduled.</div>
     <% end %>
   </div>
 
   <div class="card">
-    <div class="page-header" style="margin-bottom:10px;">
-      <div>
-        <h2 class="page-header__title" style="font-size:1.05rem;">School Events</h2>
-        <p class="page-header__subtitle">Upcoming events and activities.</p>
-      </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <div style="font-weight:800; font-size:1.1rem;">School Events</div>
     </div>
-
+    
     <% if @events.any? %>
-      <div class="table-container">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Event</th>
-              <th>Date & Time</th>
-              <th>Location</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% @events.each do |event| %>
-              <tr>
-                <td><%= event.title %></td>
-                <td>
-                  <%= event.start_time.strftime("%b %d, %Y") %><br>
-                  <span class="form-help">
-                    <%= event.start_time.strftime("%I:%M %p") %> – <%= event.end_time.strftime("%I:%M %p") %>
-                  </span>
-                </td>
-                <td><%= event.location.presence || "—" %></td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
+      <div id="events-list-table"></div>
     <% else %>
-      <div class="form-help">No events scheduled.</div>
+      <div class="text-frame" style="width:100%;">No events scheduled.</div>
     <% end %>
   </div>
 </div>
 
-<!-- Modal -->
+<!-- Main Detail Modal -->
 <div id="calendar-modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="calendar-modal-title">
   <div class="modal__backdrop" data-modal-close="true"></div>
-
   <div class="modal__panel">
     <div class="modal__header">
       <div>
         <div class="modal__kicker" id="calendar-modal-type">Details</div>
         <h3 class="modal__title" id="calendar-modal-title">Item</h3>
       </div>
-
-      <button class="icon-btn" type="button" aria-label="Close" data-modal-close="true">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none">
-          <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          <path d="M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </button>
+      <button class="icon-btn" type="button" aria-label="Close" data-modal-close="true">✕</button>
     </div>
-
     <div class="modal__body">
       <div class="modal__meta">
         <div class="modal__meta-row">
           <div class="modal__meta-label">Date</div>
           <div class="modal__meta-value" id="calendar-modal-date">—</div>
         </div>
-
         <div class="modal__meta-row">
           <div class="modal__meta-label">Time</div>
           <div class="modal__meta-value" id="calendar-modal-time">—</div>
         </div>
       </div>
-
       <div class="modal__desc">
         <div class="modal__meta-label">Description</div>
-        <div class="readonly" id="calendar-modal-desc" style="height:auto; padding:10px 12px; align-items:flex-start;">
+        <div class="readonly" id="calendar-modal-desc" style="height:auto; min-height:80px; padding:12px; align-items:flex-start; margin-top:8px;">
           —
         </div>
       </div>
     </div>
-
     <div class="modal__footer">
       <button class="btn btn-ghost" type="button" data-modal-close="true">Close</button>
     </div>
   </div>
 </div>
 
-<style>
-  /* ---------- Calendar (theme-aligned) ---------- */
-  .calendar { width: 100%; }
-
-  .calendar__top {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 12px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .calendar__month {
-    font-size: 1.05rem;
-    font-weight: 800;
-    letter-spacing: -0.01em;
-  }
-
-  .calendar__hint {
-    margin-top: 6px;
-    color: var(--muted);
-    font-weight: 500;
-    font-size: 0.92rem;
-  }
-
-  .calendar__controls {
-    display: inline-flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  .calendar__grid {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .cal-head {
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 10px 8px;
-    text-align: center;
-    font-weight: 800;
-    font-size: 0.75rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  .cal-day {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    min-height: 120px;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    box-shadow: var(--shadow-sm);
-  }
-
-  .cal-day.is-empty {
-    background: transparent;
-    border: 1px dashed color-mix(in oklab, var(--border) 70%, transparent);
-    box-shadow: none;
-  }
-
-  .cal-day__top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-  }
-
-  .cal-day__num {
-    font-weight: 800;
-    color: var(--text);
-    font-size: 0.95rem;
-  }
-
-  .cal-day.is-today {
-    border-color: color-mix(in oklab, var(--primary) 40%, var(--border));
-    box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 18%, transparent);
-  }
-
-  .cal-day.is-today .cal-day__num {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    height: 26px;
-    min-width: 26px;
-    padding: 0 8px;
-    border-radius: 999px;
-    background: rgba(15,118,110,.12);
-    color: var(--primary);
-  }
-
-  .cal-events {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    overflow: auto;
-    padding-right: 2px;
-  }
-
-  .cal-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    border-radius: 10px;
-    padding: 8px 10px;
-    border: 1px solid var(--border);
-    background: var(--surface-2);
-    cursor: pointer;
-    user-select: none;
-    transition: transform .08s ease, background-color .15s ease, border-color .15s ease;
-    min-height: 34px;
-  }
-
-  .cal-pill:hover { background: color-mix(in oklab, var(--surface-2) 70%, white); }
-  .cal-pill:active { transform: translateY(1px); }
-
-  .cal-pill__dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 999px;
-    flex: 0 0 10px;
-  }
-
-  .cal-pill__text {
-    font-size: 0.85rem;
-    font-weight: 650;
-    color: var(--text-2);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .cal-pill--curriculum .cal-pill__dot { background: var(--primary); }
-  .cal-pill--event .cal-pill__dot { background: var(--accent); }
-
-  .cal-more {
-    color: var(--muted);
-    font-size: 0.85rem;
-    font-weight: 600;
-    margin-top: 2px;
-  }
-
-  @media (max-width: 900px) {
-    .calendar__grid { gap: 6px; }
-    .cal-day { min-height: 110px; padding: 8px; }
-  }
-
-  /* ---------- Modal (theme-aligned) ---------- */
-  .modal {
-    position: fixed;
-    inset: 0;
-    display: none;
-    z-index: 100;
-  }
-  .modal.is-open { display: block; }
-
-  .modal__backdrop {
-    position: absolute;
-    inset: 0;
-    background: rgba(16,24,40,.55);
-  }
-
-  body[data-theme="dark"] .modal__backdrop {
-    background: rgba(0,0,0,.55);
-  }
-
-  .modal__panel {
-    position: relative;
-    width: min(560px, calc(100% - 32px));
-    margin: 10vh auto 0 auto;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-md);
-    overflow: hidden;
-  }
-
-  .modal__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-    padding: 14px 14px;
-    border-bottom: 1px solid var(--border);
-    background: color-mix(in oklab, var(--surface) 85%, var(--surface-2));
-  }
-
-  .modal__kicker {
-    font-size: 0.75rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted);
-    font-weight: 800;
-  }
-
-  .modal__title {
-    margin: 2px 0 0 0;
-    font-size: 1.1rem;
-    font-weight: 800;
-    letter-spacing: -0.01em;
-  }
-
-  .modal__body {
-    padding: 14px;
-    display: grid;
-    gap: 12px;
-  }
-
-  .modal__meta {
-    display: grid;
-    gap: 8px;
-    padding: 12px;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    background: var(--surface-2);
-  }
-
-  .modal__meta-row {
-    display: grid;
-    grid-template-columns: 84px 1fr;
-    gap: 10px;
-    align-items: center;
-  }
-
-  .modal__meta-label {
-    color: var(--muted);
-    font-weight: 700;
-    font-size: 0.85rem;
-  }
-
-  .modal__meta-value {
-    color: var(--text);
-    font-weight: 650;
-    font-size: 0.92rem;
-  }
-
-  .modal__footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    padding: 12px 14px;
-    border-top: 1px solid var(--border);
-    background: color-mix(in oklab, var(--surface) 85%, var(--surface-2));
-  }
-</style>
+<!-- Day Expanded List Modal -->
+<div id="day-list-modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="modal__backdrop" data-modal-close="true"></div>
+  <div class="modal__panel">
+    <div class="modal__header">
+      <div>
+        <div class="modal__kicker">Schedule for</div>
+        <h3 class="modal__title" id="day-modal-title">Date</h3>
+      </div>
+      <button class="icon-btn" type="button" aria-label="Close" data-modal-close="true">✕</button>
+    </div>
+    <div class="modal__body" id="day-modal-body" style="display:flex; flex-direction:column; gap:10px;">
+      <!-- Content injected by JS -->
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-ghost" type="button" data-modal-close="true">Close</button>
+    </div>
+  </div>
+</div>
 
 <script>
-  function initCalendarPage() {
-    const calendarGrid = document.getElementById("calendar-grid");
-    const monthYear = document.getElementById("current-month-year");
-    const prevBtn = document.getElementById("prev-month");
-    const nextBtn = document.getElementById("next-month");
+  (function() {
+    let currentViewDate = new Date();
+    currentViewDate.setDate(1);
 
-    if (!calendarGrid || !monthYear || !prevBtn || !nextBtn) return;
+    function initCalendar() {
+      const grid = document.getElementById("calendar-grid");
+      const monthHeader = document.getElementById("current-month-year");
+      if (!grid || !monthHeader) return;
 
-    // If Turbo caches and re-renders, allow re-init safely
-    // (clear previous content + remove old listeners by cloning buttons)
-    const prevClone = prevBtn.cloneNode(true);
-    const nextClone = nextBtn.cloneNode(true);
-    prevBtn.parentNode.replaceChild(prevClone, prevBtn);
-    nextBtn.parentNode.replaceChild(nextClone, nextBtn);
+      const events = [
+        <% @calendar_events.each do |e| %>
+          {
+            title: "<%= j e[:title] %>",
+            start: new Date("<%= e[:start]&.iso8601 %>"),
+            end: new Date("<%= e[:end]&.iso8601 %>"),
+            type: "<%= e[:type] %>",
+            description: "<%= j e[:description].to_s %>"
+          },
+        <% end %>
+      ].filter(e => !isNaN(e.start.getTime()));
 
-    const modal = document.getElementById("calendar-modal");
-    const modalType = document.getElementById("calendar-modal-type");
-    const modalTitle = document.getElementById("calendar-modal-title");
-    const modalDate = document.getElementById("calendar-modal-date");
-    const modalTime = document.getElementById("calendar-modal-time");
-    const modalDesc = document.getElementById("calendar-modal-desc");
+      function render() {
+        grid.innerHTML = "";
+        const year = currentViewDate.getFullYear();
+        const month = currentViewDate.getMonth();
+        
+        monthHeader.textContent = currentViewDate.toLocaleString('default', { month: 'long', year: 'numeric' });
 
-    function openModal(evt) {
-      if (!modal) return;
-
-      modalType.textContent = evt.type === "curriculum" ? "Curriculum" : "Event";
-      modalTitle.textContent = evt.title || "—";
-
-      const dateStr = evt.start.toLocaleDateString(undefined, {
-        weekday: "long", year: "numeric", month: "long", day: "numeric"
-      });
-      modalDate.textContent = dateStr;
-
-      const timeStr =
-        `${evt.start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} – ` +
-        `${evt.end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
-      modalTime.textContent = timeStr;
-
-      modalDesc.textContent = (evt.description && evt.description.trim().length) ? evt.description : "No description.";
-
-      modal.classList.add("is-open");
-      modal.setAttribute("aria-hidden", "false");
-      document.body.style.overflow = "hidden";
-    }
-
-    function closeModal() {
-      if (!modal) return;
-      modal.classList.remove("is-open");
-      modal.setAttribute("aria-hidden", "true");
-      document.body.style.overflow = "";
-    }
-
-    if (modal) {
-      // click backdrop/close buttons
-      modal.addEventListener("click", function (e) {
-        if (e.target && e.target.dataset && e.target.dataset.modalClose === "true") closeModal();
-      });
-
-      // escape closes
-      document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape" && modal.classList.contains("is-open")) closeModal();
-      });
-    }
-
-    // Server-provided events
-    const calendarEvents = [
-      <% @calendar_events.each_with_index do |event, index| %>
-        {
-          id: "<%= "event_#{event[:type]}_#{index}" %>",
-          title: "<%= j event[:title] %>",
-          start: new Date("<%= event[:start].iso8601 %>"),
-          end: new Date("<%= event[:end].iso8601 %>"),
-          type: "<%= event[:type] %>",
-          description: "<%= j(event[:description].to_s) %>"
-        }<%= index < @calendar_events.length - 1 ? "," : "" %>
-      <% end %>
-    ];
-
-    const now = new Date();
-    let currentMonth = now.getMonth();
-    let currentYear = now.getFullYear();
-
-    const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const monthNames = ["January", "February", "March", "April", "May", "June",
-                        "July", "August", "September", "October", "November", "December"];
-
-    function renderCalendar() {
-      calendarGrid.innerHTML = "";
-      monthYear.textContent = `${monthNames[currentMonth]} ${currentYear}`;
-
-      // headers
-      daysOfWeek.forEach((d) => {
-        const head = document.createElement("div");
-        head.className = "cal-head";
-        head.textContent = d;
-        calendarGrid.appendChild(head);
-      });
-
-      const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-
-      // blanks
-      for (let i = 0; i < firstDay; i++) {
-        const empty = document.createElement("div");
-        empty.className = "cal-day is-empty";
-        calendarGrid.appendChild(empty);
-      }
-
-      for (let day = 1; day <= daysInMonth; day++) {
-        const dayCell = document.createElement("div");
-        dayCell.className = "cal-day";
-
-        const isToday =
-          currentYear === now.getFullYear() &&
-          currentMonth === now.getMonth() &&
-          day === now.getDate();
-        if (isToday) dayCell.classList.add("is-today");
-
-        const top = document.createElement("div");
-        top.className = "cal-day__top";
-
-        const num = document.createElement("div");
-        num.className = "cal-day__num";
-        num.textContent = day;
-
-        top.appendChild(num);
-        dayCell.appendChild(top);
-
-        const list = document.createElement("div");
-        list.className = "cal-events";
-
-        const dayEvents = calendarEvents.filter((evt) => {
-          const d = evt.start;
-          return d.getFullYear() === currentYear &&
-                 d.getMonth() === currentMonth &&
-                 d.getDate() === day;
+        const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        days.forEach(d => {
+          const h = document.createElement("div");
+          h.className = "cal-head";
+          h.textContent = d;
+          grid.appendChild(h);
         });
 
-        const MAX = 4;
-        dayEvents.slice(0, MAX).forEach((evt) => {
-          const pill = document.createElement("div");
-          pill.className = `cal-pill ${evt.type === "curriculum" ? "cal-pill--curriculum" : "cal-pill--event"}`;
-          pill.setAttribute("role", "button");
-          pill.setAttribute("tabindex", "0");
+        const firstDay = new Date(year, month, 1).getDay();
+        const lastDay = new Date(year, month + 1, 0).getDate();
 
-          const dot = document.createElement("span");
-          dot.className = "cal-pill__dot";
-
-          const text = document.createElement("span");
-          text.className = "cal-pill__text";
-          text.textContent = evt.title;
-
-          pill.appendChild(dot);
-          pill.appendChild(text);
-
-          pill.addEventListener("click", () => openModal(evt));
-          pill.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              openModal(evt);
-            }
-          });
-
-          list.appendChild(pill);
-        });
-
-        if (dayEvents.length > MAX) {
-          const more = document.createElement("div");
-          more.className = "cal-more";
-          more.textContent = `+${dayEvents.length - MAX} more`;
-          list.appendChild(more);
+        for (let i = 0; i < firstDay; i++) {
+          const e = document.createElement("div");
+          e.className = "cal-day is-empty";
+          grid.appendChild(e);
         }
 
-        dayCell.appendChild(list);
-        calendarGrid.appendChild(dayCell);
+        const now = new Date();
+        for (let d = 1; d <= lastDay; d++) {
+          const cell = document.createElement("div");
+          cell.className = "cal-day";
+          if (year === now.getFullYear() && month === now.getMonth() && d === now.getDate()) cell.classList.add("is-today");
+
+          const num = document.createElement("div");
+          num.className = "cal-day__num";
+          num.textContent = d;
+          cell.appendChild(num);
+
+          const list = document.createElement("div");
+          list.className = "cal-events";
+          
+          const dayEvents = events.filter(e => 
+            e.start.getFullYear() === year && 
+            e.start.getMonth() === month && 
+            e.start.getDate() === d
+          );
+          
+          dayEvents.slice(0, 3).forEach(e => {
+            const p = document.createElement("div");
+            p.className = `cal-pill cal-pill--${e.type}`;
+            p.textContent = e.title;
+            p.onclick = (ev) => { ev.stopPropagation(); showDetailModal(e); };
+            list.appendChild(p);
+          });
+
+          if (dayEvents.length > 3) {
+            const more = document.createElement("div");
+            more.className = "cal-more";
+            more.textContent = `+${dayEvents.length - 3} more`;
+            more.onclick = (ev) => { ev.stopPropagation(); showDayModal(dayEvents, new Date(year, month, d)); };
+            list.appendChild(more);
+          }
+
+          cell.appendChild(list);
+          grid.appendChild(cell);
+        }
+      }
+
+      function showDetailModal(e) {
+        const m = document.getElementById("calendar-modal");
+        if (!m) return;
+        document.getElementById("calendar-modal-title").textContent = e.title;
+        document.getElementById("calendar-modal-type").textContent = e.type.toUpperCase();
+        document.getElementById("calendar-modal-date").textContent = e.start.toLocaleDateString();
+        document.getElementById("calendar-modal-time").textContent = e.start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        document.getElementById("calendar-modal-desc").textContent = e.description || "No description provided.";
+        m.classList.add("is-open");
+      }
+
+      function showDayModal(dayEvents, date) {
+        const m = document.getElementById("day-list-modal");
+        if (!m) return;
+        document.getElementById("day-modal-title").textContent = date.toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' });
+        const body = document.getElementById("day-modal-body");
+        body.innerHTML = "";
+        
+        dayEvents.forEach(e => {
+          const item = document.createElement("div");
+          item.className = `cal-pill cal-pill--${e.type}`;
+          item.style.fontSize = "0.9rem";
+          item.style.padding = "10px 14px";
+          item.style.whiteSpace = "normal";
+          item.innerHTML = `<strong>${e.title}</strong><br><span style="font-size:0.75rem; opacity:0.8">${e.start.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>`;
+          item.onclick = () => { m.classList.remove("is-open"); showDetailModal(e); };
+          body.appendChild(item);
+        });
+        
+        m.classList.add("is-open");
+      }
+
+      document.querySelectorAll("[data-modal-close]").forEach(b => b.onclick = () => {
+        const detailModal = document.getElementById("calendar-modal");
+        const dayModal = document.getElementById("day-list-modal");
+        if (detailModal) detailModal.classList.remove("is-open");
+        if (dayModal) dayModal.classList.remove("is-open");
+      });
+
+      const pBtn = document.getElementById("prev-month");
+      const nBtn = document.getElementById("next-month");
+      if (pBtn) {
+        pBtn.onclick = () => {
+          currentViewDate.setMonth(currentViewDate.getMonth() - 1);
+          render();
+        };
+      }
+      if (nBtn) {
+        nBtn.onclick = () => {
+          currentViewDate.setMonth(currentViewDate.getMonth() + 1);
+          render();
+        };
+      }
+
+      render();
+
+      // --- Tabulator Lists ---
+      const currEl = document.getElementById("curriculum-table");
+      if (currEl && !currEl.classList.contains("tabulator")) {
+        new Tabulator(currEl, {
+          data: [<% @curriculums.each do |c| %> {subject: "<%= j c.subject %>", title: "<%= j c.title %>", time: "<%= c.start_time.strftime('%b %d, %H:%M') %>"}, <% end %>],
+          layout: "fitColumns",
+          pagination: "local",
+          paginationSize: 5,
+          columns: [
+            {title: "Subject", field: "subject", width: 100},
+            {title: "Title", field: "title", widthGrow: 2},
+            {title: "Time", field: "time", width: 120}
+          ]
+        });
+      }
+
+      const evEl = document.getElementById("events-list-table");
+      if (evEl && !evEl.classList.contains("tabulator")) {
+        new Tabulator(evEl, {
+          data: [<% @events.each do |e| %> {title: "<%= j e.title %>", time: "<%= e.start_time.strftime('%b %d, %H:%M') %>", loc: "<%= j e.location %>"}, <% end %>],
+          layout: "fitColumns",
+          pagination: "local",
+          paginationSize: 5,
+          columns: [
+            {title: "Event", field: "title", widthGrow: 2},
+            {title: "Location", field: "loc"},
+            {title: "Time", field: "time", width: 120}
+          ]
+        });
       }
     }
 
-    // navigation
-    prevClone.addEventListener("click", function (e) {
-      e.preventDefault();
-      currentMonth--;
-      if (currentMonth < 0) { currentMonth = 11; currentYear--; }
-      renderCalendar();
-    });
-
-    nextClone.addEventListener("click", function (e) {
-      e.preventDefault();
-      currentMonth++;
-      if (currentMonth > 11) { currentMonth = 0; currentYear++; }
-      renderCalendar();
-    });
-
-    renderCalendar();
-  }
-
-  // Works with normal page loads + Turbo + Turbolinks
-  document.addEventListener("DOMContentLoaded", initCalendarPage);
-  document.addEventListener("turbo:load", initCalendarPage);
-  document.addEventListener("turbolinks:load", initCalendarPage);
+    document.addEventListener("turbo:load", initCalendar);
+    // Safety check for direct page loads
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initCalendar);
+    } else {
+      initCalendar();
+    }
+  })();
 </script>
-
