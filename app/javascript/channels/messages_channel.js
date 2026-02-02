@@ -31,21 +31,24 @@ consumer.subscriptions.create("MessagesChannel", {
         const messageBubble = document.createElement('div');
         messageBubble.className = isMine ? 'message-bubble message-bubble--mine' : 'message-bubble message-bubble--theirs';
 
-        // Create content div
+        // Create content div with proper class
         const contentWrapper = document.createElement('div');
         contentWrapper.className = 'message-bubble__content';
         if (contentDiv) {
           contentWrapper.innerHTML = contentDiv.innerHTML;
         }
 
-        // Create meta div
+        // Create meta div with proper class
         const metaDiv = document.createElement('div');
         metaDiv.className = 'message-bubble__meta';
         if (timeSpan) {
           metaDiv.textContent = timeSpan.textContent;
         }
         if (isMine) {
-          metaDiv.innerHTML += '<span title="Status">• Sent</span>';
+          const statusSpan = document.createElement('span');
+          statusSpan.title = "Status";
+          statusSpan.textContent = "• Sent";
+          metaDiv.appendChild(statusSpan);
         }
 
         // Assemble the message bubble
@@ -54,6 +57,9 @@ consumer.subscriptions.create("MessagesChannel", {
 
         // Insert the properly formatted message
         container.insertAdjacentHTML("beforeend", messageBubble.outerHTML);
+      } else {
+        // Fallback if parsing fails
+        container.insertAdjacentHTML("beforeend", data.html);
       }
     } else {
       // Fallback to original behavior if current user ID is not available
