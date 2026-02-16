@@ -1,138 +1,107 @@
-# Kindergarten ERP
+# KidGarden ERP
 
-A comprehensive enterprise resource planning system for kindergartens and early childhood establishments built with Ruby on Rails.
+A comprehensive Enterprise Resource Planning (ERP) system specifically designed for kindergartens and early childhood establishments. Built with Ruby on Rails 8, KidGarden aims to bridge the digital gap in the education sector by providing a professional, modern, and user-friendly platform for administrators, teachers, and parents.
 
-## Features
+![KidGarden Login](kidgarden_login_dark_mode.png)
 
-- Staff management
-- Student enrollment and tracking
-- Parent communication
-- Attendance tracking
-- Fee management
-- Event planning and notifications
-- Responsive web interface with modern UI
+## 🚀 Overview
 
-## Architecture
+KidGarden is more than just a management tool; it's a complete ecosystem for educational institutions. It replaces fragmented communication (like WhatsApp groups) and manual record-keeping with an integrated solution tailored for the local market context.
 
-This application follows modern Rails architecture patterns:
+## ✨ Key Features
 
-### Design Patterns Used
+### 👥 Entity Management
+- **Student Profiles**: Comprehensive records including medical alerts, emergency contacts, and classroom assignments.
+- **Parent Portal**: Linked accounts for families with multiple children.
+- **Staff Management**: Role-based access control for administrators, teachers, and support staff.
 
-1. **Service Objects** (`app/services/`): Encapsulate complex business logic
-   - `AttendanceService`: Handles attendance marking with notifications
-   - `FeeService`: Manages fee processing and reminders
+### 📅 Attendance & Operations
+- **Digital Attendance**: Real-time check-in/out tracking with status and notes.
+- **Event Calendar**: Integrated system for school trips, holidays, and parent meetings.
+- **Classroom Management**: Organize students and teachers into dedicated learning environments.
 
-2. **Decorators** (`app/decorators/`): Handle view-specific formatting
-   - `StudentDecorator`: Formats student data for display
+### 💰 Financial Engine
+- **Automated Invoicing**: Generate monthly invoices with itemized fees.
+- **Payment Tracking**: Monitor "Paid" vs "Pending" statuses with detailed transaction history.
+- **Discount System**: Support for multi-child (sibling) discounts and custom fee adjustments.
+- **Payment Reminders**: Automated notifications for upcoming or overdue payments.
 
-3. **Concerns** (`app/controllers/concerns/`): Share common functionality
-   - `Filterable`: Provides common filtering methods across controllers
+### 💬 Communication & Engagement
+- **Real-time Messaging**: Secure internal conversation system with read receipts.
+- **Photo & Document Sharing**: Privacy-controlled galleries for sharing classroom moments and important documents.
+- **Announcement Board**: Dashboard-integrated school-wide updates.
 
-4. **Policy Classes** (`app/policies/`): Handle authorization logic
-   - `StudentPolicy`: Defines who can view, edit, or delete students
-
-5. **Helpers** (`app/helpers/`): Application-wide helper methods
-   - `ApplicationHelper`: Common formatting methods
-
-### Technology Stack
+## 🛠 Technology Stack
 
 - **Framework**: Ruby on Rails 8.0
-- **Database**: PostgreSQL
-- **Background Jobs**: Sidekiq with Redis
-- **Frontend**: Hotwire (Turbo, Stimulus) for modern web interactions
-- **Styling**: CSS with the same color palette as the React app
-- **Containerization**: Docker and Docker Compose
+- **Database**: PostgreSQL (Primary) & Redis (Caching/Background Jobs)
+- **Background Jobs**: Sidekiq
+- **Frontend**: Hotwire (Turbo & Stimulus) for a SPA-like experience without complex JS frameworks.
+- **Styling**: Tailwind-inspired custom CSS with a professional "Notion-like" aesthetic.
+- **Storage**: Active Storage with support for local or cloud providers.
+- **Deployment**: Containerized with Docker and orchestrated with Kamal.
 
-## Setup
+## 🎨 Color Palette
+
+The application uses a carefully curated palette to ensure a warm yet professional feel:
+
+- **Primary**: `#1e1f24` (Dark Slate) - Professional hierarchy
+- **Background**: `#f5f4f2` (Soft Porcelain) - Clean workspace
+- **Secondary**: `#a8c1b7` (Gentle Sage) - Calm interactions
+- **Accent**: `#dcc9a2` (Warm Sandstone) - Highlights
+- **Playful Tones**: `#bfd6ea` (Baby Blue) and `#e8cbd6` (Rose)
+
+## ⚙️ Setup & Installation
 
 ### Prerequisites
-
 - Ruby 3.3.3
-- PostgreSQL
+- PostgreSQL 14+
 - Redis
-- Docker (optional, for containerized deployment)
+- Docker (Optional)
 
 ### Local Development
-
-1. Clone the repository
-2. Install dependencies:
+1. **Clone the repository**:
+   ```bash
+   git clone <repo-url>
+   cd kidGarden
+   ```
+2. **Install dependencies**:
    ```bash
    bundle install
    ```
-3. Set up the database:
+3. **Configure Environment**:
+   Copy the sample environment file and update your credentials:
    ```bash
-   rails db:create
-   rails db:migrate
+   cp .env.example .env # If available, otherwise create one
    ```
-4. Start the application:
+4. **Database Setup**:
    ```bash
-   rails server
+   rails db:prepare
+   rails db:seed # Includes sample data for testing
+   ```
+5. **Start the Engines**:
+   ```bash
+   # Run Rails, Sidekiq, and CSS watcher in parallel
+   bin/dev
    ```
 
 ### Docker Setup
-
-For production-like environment:
-
-1. Build and start the services:
-   ```bash
-   docker-compose -f docker-compose.dev.yml up
-   ```
-
-## Environment Variables
-
-Create a `.env` file with the following variables:
-
-```
-RAILS_MASTER_KEY=your_master key from config/master.key
-DB_HOST=localhost
-DB_USERNAME=postgres
-DB_PASSWORD=password
-REDIS_URL=redis://localhost:6379/0
+For a production-like environment:
+```bash
+docker-compose -f docker-compose.dev.yml up --build
 ```
 
-## Background Jobs
+## 📈 Project Roadmap
 
-This application uses Sidekiq for background job processing:
+Currently, KidGarden is at **~45% completion**.
 
-1. Start Sidekiq:
-   ```bash
-   bundle exec sidekiq
-   ```
+- ✅ **Phase 1 (Core Foundation)**: 100% Complete
+- 🔄 **Phase 2 (Financial & Operations)**: 60% Complete (Invoicing/Payments done, Inventory pending)
+- 🔄 **Phase 3 (Engagement & Analytics)**: 25% Complete (Messaging/Photos done)
+- ⏳ **Phase 4 (Advanced Features)**: Planned
 
-Background jobs are used for:
-- Sending attendance notifications
-- Fee reminders
-- Event notifications
+See [KIDGARDEN_ROADMAP.md](KIDGARDEN_ROADMAP.md) for the detailed 12-month vision.
 
-## Deployment
+## 📄 License
 
-This application is configured for deployment with Kamal. To deploy:
-
-1. Update `config/deploy.yml` with your server details
-2. Deploy with:
-   ```bash
-   bin/kamal deploy
-   ```
-
-## Color Palette
-
-The application uses the same color palette as the React app:
-
-- Primary: #1e1f24 (dark slate)
-- Background: #f5f4f2 (soft porcelain)
-- Secondary: #a8c1b7 (gentle sage)
-- Accent: #dcc9a2 (warm sandstone)
-- Baby blue: #bfd6ea
-- Rose: #e8cbd6
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the LICENSE file for details.
