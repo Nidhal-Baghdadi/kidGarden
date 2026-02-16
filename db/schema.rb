@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_31_061256) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_03_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -381,6 +381,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_31_061256) do
     t.datetime "approved_at"
     t.string "verification_code"
     t.integer "role_request"
+    t.string "otp_secret"
+    t.integer "otp_attempts_count", default: 0
+    t.datetime "otp_last_attempt_at"
+    t.datetime "otp_expires_at"
+    t.datetime "otp_sent_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["role"], name: "index_users_on_role"

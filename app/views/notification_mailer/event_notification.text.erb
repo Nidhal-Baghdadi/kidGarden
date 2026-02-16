@@ -1,0 +1,22 @@
+New Event: <%= @event.title %>
+
+Hello <%= @recipients.first&.name %> and others!
+
+We're excited to announce a new event at Kid Garden:
+
+Event: <%= @event.title %>
+Description: <%= @event.description || 'No description provided' %>
+Start Time: <%= @event.start_time.strftime('%B %d, %Y at %I:%M %p') %>
+End Time: <%= @event.end_time.strftime('%B %d, %Y at %I:%M %p') %>
+Organized by: <%= @organizer&.name || 'School Administration' %>
+<% if @event.location.present? %>
+Location: <%= @event.location %>
+<% end %>
+
+We hope to see you there! Please feel free to reach out if you have any questions.
+
+Thank you for being part of the Kid Garden community!
+
+---
+&copy; 2026 Kid Garden. All rights reserved.
+This is an automated message, please do not reply.

@@ -1,4 +1,6 @@
 class Attendance < ApplicationRecord
+  include EmailNotification
+
   belongs_to :student
   belongs_to :staff, class_name: 'User', optional: true
 
@@ -8,4 +10,12 @@ class Attendance < ApplicationRecord
   validates :student_id, presence: true
   validates :status, presence: true
   validates :student_id, uniqueness: { scope: :date }
+
+  after_commit :send_notification, on: [:create, :update]
+
+  private
+
+  def send_notification
+    send_attendance_notification_async
+  end
 end

@@ -1,0 +1,22 @@
+Attendance Update
+
+Hello <%= @recipient.name %>!
+
+This is to inform you about an attendance update for your child:
+
+Student: <%= @student.full_name %>
+Classroom: <%= @classroom&.name || 'Not assigned' %>
+Date: <%= @attendance.date.strftime('%B %d, %Y') %>
+Status: <%= @attendance.status.humanize %>
+Recorded by: <%= @attendance.staff&.name || 'Unknown' %>
+<% if @attendance.notes.present? %>
+Notes: <%= @attendance.notes %>
+<% end %>
+
+If you have any questions about this attendance record, please contact the school administration.
+
+Thank you for using Kid Garden!
+
+---
+&copy; 2026 Kid Garden. All rights reserved.
+This is an automated message, please do not reply.

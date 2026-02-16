@@ -29,6 +29,13 @@ services:
       timeout: 5s
       retries: 5
 
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "1025:1025"    # SMTP
+      - "8025:8025"    # Web interface
+    restart: unless-stopped
+
   web:
     build: .
     ports:
@@ -38,6 +45,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     environment:
       - DATABASE_URL=postgresql://postgres:password@db:5432/kindergarten_erp_production
       - REDIS_URL=redis://redis:6379/0
@@ -54,6 +63,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     environment:
       - DATABASE_URL=postgresql://postgres:password@db:5432/kindergarten_erp_production
       - REDIS_URL=redis://redis:6379/0

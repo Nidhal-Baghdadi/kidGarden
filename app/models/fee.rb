@@ -1,6 +1,9 @@
 class Fee < ApplicationRecord
+  include EmailNotification
+
   belongs_to :student
   belongs_to :fee_category, optional: true
+  has_many :payments, dependent: :destroy
   has_many :fee_discounts, dependent: :destroy
   has_many :discounts, through: :fee_discounts
 
@@ -11,6 +14,14 @@ class Fee < ApplicationRecord
   validates :student_id, presence: true
 
   before_save :calculate_total_amount
+
+  after_commit :send_notification, on: [:create]
+  
+  private
+  
+  def send_notification
+    send_fee_notification_async
+  end
 
   def calculate_total_amount
     # Calculate discounts applied to this fee

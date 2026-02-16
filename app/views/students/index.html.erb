@@ -11,19 +11,19 @@
   </div>
 </div>
 
-<div class="card" style="margin-bottom: 24px;">
-  <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+<div class="card mb-6">
+  <div class="flex gap-6 flex-wrap">
     <!-- Chart: Students by Status -->
-    <div style="flex: 1; min-width: 280px;">
-      <h3 style="font-size: 1rem; margin: 0 0 12px 0;">Student Status</h3>
+    <div class="flex-1" style="min-width: 280px;">
+      <h3 class="text-base mb-3">Student Status</h3>
       <div style="height: 200px; position: relative;">
         <canvas id="studentStatusChart"></canvas>
       </div>
     </div>
     
     <!-- Chart: Students by Gender -->
-    <div style="flex: 1; min-width: 280px;">
-      <h3 style="font-size: 1rem; margin: 0 0 12px 0;">Gender Distribution</h3>
+    <div class="flex-1" style="min-width: 280px;">
+      <h3 class="text-base mb-3">Gender Distribution</h3>
       <div style="height: 200px; position: relative;">
         <canvas id="studentGenderChart"></canvas>
       </div>
@@ -35,7 +35,7 @@
   <% if @students.any? %>
     <div id="students-table"></div>
   <% else %>
-    <div class="text-frame" style="text-align:center; padding: 18px; width: 100%;">
+    <div class="text-frame text-center p-4 w-full">
       No students found for your account.
     </div>
   <% end %>

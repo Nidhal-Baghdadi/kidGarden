@@ -1,0 +1,22 @@
+New Fee Assessment
+
+Hello <%= @recipient.name %>!
+
+This is to inform you about a new fee assessment for your child:
+
+Student: <%= @student.full_name %>
+Fee Category: <%= @fee.fee_category&.name || 'General' %>
+Description: <%= @fee.description %>
+Amount: $<%= @fee.amount %>
+Due Date: <%= @fee.due_date.strftime('%B %d, %Y') %>
+Created: <%= @fee.created_at.strftime('%B %d, %Y') %>
+
+Please ensure payment is made by the due date to avoid any late fees.
+
+For payment options or questions, please contact the school administration.
+
+Thank you for using Kid Garden!
+
+---
+&copy; 2026 Kid Garden. All rights reserved.
+This is an automated message, please do not reply.

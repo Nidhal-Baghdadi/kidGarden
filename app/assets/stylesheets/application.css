@@ -383,3 +383,95 @@ a:hover { color: var(--primary); }
   .topbar { padding: 0 16px; }
   .profile-row { flex-direction: column; align-items: flex-start; gap: 4px; }
 }
+
+/* ---------------------------------------------------------
+   UTILITIES (Polyfill for Tailwind-like classes used in views)
+   --------------------------------------------------------- */
+
+/* Grid System */
+.grid { display: grid; }
+.grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+.gap-2 { gap: 8px; }
+.gap-4 { gap: 16px; }
+.gap-6 { gap: 24px; }
+
+@media (min-width: 768px) {
+  .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .md\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .md\:col-span-4 { grid-column: span 4 / span 4; }
+}
+
+@media (min-width: 1024px) {
+  .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .lg\:col-span-2 { grid-column: span 2 / span 2; }
+}
+
+/* Flexbox */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.justify-end { justify-content: flex-end; }
+.w-full { width: 100%; }
+
+/* Spacing */
+.space-y-2 > * + * { margin-top: 8px; }
+.space-y-4 > * + * { margin-top: 16px; }
+.mt-2 { margin-top: 8px; }
+.mt-6 { margin-top: 24px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-6 { margin-bottom: 24px; }
+.py-8 { padding-top: 32px; padding-bottom: 32px; }
+.pt-4 { padding-top: 16px; }
+
+/* Typography */
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.whitespace-nowrap { white-space: nowrap; }
+.font-bold { font-weight: 700; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+.text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+.text-base { font-size: 1rem; line-height: 1.5rem; }
+
+/* Custom Text Helpers */
+.text-label { 
+  display: block; 
+  font-size: 0.75rem; 
+  font-weight: 700; 
+  color: var(--muted); 
+  text-transform: uppercase; 
+  letter-spacing: 0.05em; 
+  margin-bottom: 4px; 
+}
+
+.text-value { 
+  font-size: 1rem; 
+  font-weight: 600; 
+  color: var(--text); 
+  line-height: 1.4;
+}
+
+.text-muted { color: var(--muted); }
+.text-success { color: var(--success); }
+.text-warning { color: var(--warning); }
+.text-danger { color: var(--danger); }
+
+/* Additional Layout Helpers */
+.gap-3 { gap: 12px; }
+.pt-6 { padding-top: 24px; }
+.p-4 { padding: 16px; }
+.mt-4 { margin-top: 16px; }
+.border-t { border-top: 1px solid var(--border); }
+
+.item-row {
+  border: 1px solid var(--border);
+  border-radius: 8px; /* Slightly less rounded than main cards */
+  padding: 16px;
+  background: var(--surface-2); /* Slightly darker background */
+  margin-bottom: 16px; /* Add margin bottom for spacing between items */
+}
+
+.mb-3 { margin-bottom: 12px; }
+

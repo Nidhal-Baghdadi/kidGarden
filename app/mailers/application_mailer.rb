@@ -1,4 +1,4 @@
 class ApplicationMailer < ActionMailer::Base
-  default from: "from@example.com"
+  default from: Rails.env.production? ? "noreply@kidgarden.com" : "noreply@localhost"
   layout "mailer"
 end

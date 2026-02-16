@@ -59,6 +59,50 @@ class User < ApplicationRecord
     name
   end
 
+  # OTP Methods
+  def generate_otp
+    # Generate a 6-digit numeric OTP
+    otp = rand(100000..999999).to_s
+    self.otp_secret = otp
+    self.otp_expires_at = 10.minutes.from_now
+    self.otp_attempts_count = 0
+    save!
+
+    # Send the OTP email
+    OtpMailer.login_otp_email(self, otp).deliver_later
+
+    otp
+  end
+
+  def verify_otp(input_otp)
+    # Check if OTP is expired
+    return false if otp_expires_at.nil? || otp_expires_at < Time.current
+
+    # Check if attempts exceeded
+    return false if otp_attempts_count >= 3
+
+    # Verify OTP
+    if otp_secret == input_otp
+      # Reset OTP fields after successful verification
+      self.otp_secret = nil
+      self.otp_expires_at = nil
+      save!
+      true
+    else
+      # Increment attempt count
+      increment!(:otp_attempts_count)
+      false
+    end
+  end
+
+  def otp_expired?
+    otp_expires_at.present? && otp_expires_at < Time.current
+  end
+
+  def send_welcome_email
+    OtpMailer.signup_verification_email(self).deliver_later
+  end
+
   private
 
   def set_verification_code

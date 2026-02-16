@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style>
+      body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+      .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+      .header { background-color: #EF4444; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+      .content { background-color: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; border-top: none; }
+      .fee-info { background-color: #ffffff; padding: 15px; border-left: 4px solid #EF4444; margin: 20px 0; }
+      .amount { font-size: 24px; font-weight: bold; color: #EF4444; }
+      .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>New Fee Assessment</h1>
+      </div>
+      
+      <div class="content">
+        <h2>Hello <%= @recipient.name %>!</h2>
+        
+        <p>This is to inform you about a new fee assessment for your child:</p>
+        
+        <div class="fee-info">
+          <p><strong>Student:</strong> <%= @student.full_name %></p>
+          <p><strong>Fee Category:</strong> <%= @fee.fee_category&.name || 'General' %></p>
+          <p><strong>Description:</strong> <%= @fee.description %></p>
+          <p><strong>Amount:</strong> <span class="amount">$<%= @fee.amount %></span></p>
+          <p><strong>Due Date:</strong> <%= @fee.due_date.strftime('%B %d, %Y') %></p>
+          <p><strong>Created:</strong> <%= @fee.created_at.strftime('%B %d, %Y') %></p>
+        </div>
+        
+        <p>Please ensure payment is made by the due date to avoid any late fees.</p>
+        
+        <p>For payment options or questions, please contact the school administration.</p>
+        
+        <p>Thank you for using Kid Garden!</p>
+      </div>
+      
+      <div class="footer">
+        <p>&copy; 2026 Kid Garden. All rights reserved.</p>
+        <p>This is an automated message, please do not reply.</p>
+      </div>
+    </div>
+  </body>
+</html>

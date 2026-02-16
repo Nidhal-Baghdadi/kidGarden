@@ -1,0 +1,30 @@
+Daily Summary - <%= Date.today.strftime('%B %d, %Y') %>
+
+Hello <%= @recipient.name %>!
+
+Here's your daily summary for <%= Date.today.strftime('%B %d, %Y') %>:
+
+School Activities:
+<% if @summary[:attendance_stats] %>
+Attendance: <%= @summary[:attendance_stats][:present] %> students present, <%= @summary[:attendance_stats][:absent] %> absent
+<% end %>
+
+<% if @summary[:events_today] %>
+Events Today: <%= @summary[:events_today].count %> event(s)
+<% end %>
+
+<% if @summary[:new_notifications] %>
+New Notifications: <%= @summary[:new_notifications].count %> message(s)
+<% end %>
+
+<% if @summary[:fees_due] %>
+Upcoming Fees: <%= @summary[:fees_due].count %> fee(s) due soon
+<% end %>
+
+Log in to your Kid Garden account to view detailed information about today's activities.
+
+Thank you for using Kid Garden!
+
+---
+&copy; 2026 Kid Garden. All rights reserved.
+This is an automated message, please do not reply.

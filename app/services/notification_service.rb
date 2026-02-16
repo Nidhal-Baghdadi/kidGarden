@@ -1,107 +1,97 @@
 class NotificationService
-  def self.send_notification(recipient:, title:, message:, notification_type: 'general', sender: nil, link: nil)
-    Notification.create!(
-      recipient: recipient,
-      title: title,
-      message: message,
-      notification_type: notification_type,
-      sender: sender,
-      link: link
-    )
-  end
-
-  def self.send_attendance_notification(student:, status:, date:, teacher:)
-    title = "Attendance Update for #{student.first_name} #{student.last_name}"
-    message = "Your child was marked as #{status.humanize.downcase} on #{date.strftime('%B %d, %Y')}."
-
-    # Find all parents of the student
-    parents = student.all_parents
-    parents.each do |parent|
-      send_notification(
-        recipient: parent,
-        title: title,
-        message: message,
-        notification_type: 'attendance',
-        sender: teacher,
-        link: Rails.application.routes.url_helpers.student_path(student)
-      )
+  def self.send_attendance_notification(attendance_record)
+    # Find parents of the student
+    student = attendance_record.student
+    parents = []
+    
+    # Add the direct parent if exists
+    parents << student.parent if student.parent.present?
+    
+    # Add all associated parents through parent_student_relationships
+    parents += student.all_parents if student.all_parents.any?
+    
+    # Send notification to each parent
+    parents.uniq.each do |parent|
+      NotificationMailer.attendance_notification(parent, attendance_record).deliver_later
+    end
+    
+    # Also notify teachers of the classroom
+    if student.classroom&.teacher.present?
+      teacher = student.classroom.teacher
+      NotificationMailer.attendance_notification(teacher, attendance_record).deliver_later
     end
   end
 
-  def self.send_fee_notification(student:, fee:, amount:, due_date:)
-    title = "Fee Due: #{fee.description || 'School Fee'}"
-    message = "A fee of #{amount} TND is due on #{due_date.strftime('%B %d, %Y')} for #{student.first_name} #{student.last_name}."
-
-    parents = student.all_parents
-    parents.each do |parent|
-      send_notification(
-        recipient: parent,
-        title: title,
-        message: message,
-        notification_type: 'fee',
-        sender: nil, # System notification
-        link: Rails.application.routes.url_helpers.fees_path
-      )
+  def self.send_fee_notification(fee_record)
+    # Find parents of the student
+    student = fee_record.student
+    parents = []
+    
+    # Add the direct parent if exists
+    parents << student.parent if student.parent.present?
+    
+    # Add all associated parents through parent_student_relationships
+    parents += student.all_parents if student.all_parents.any?
+    
+    # Send notification to each parent
+    parents.uniq.each do |parent|
+      NotificationMailer.fee_notification(parent, fee_record).deliver_later
     end
   end
 
-  def self.send_event_notification(event:, recipients: nil)
-    title = "New Event: #{event.title}"
-    message = "#{event.description}\n\nDate: #{event.start_time.strftime('%B %d, %Y at %I:%M %p')}"
+  def self.send_event_notification(event_record)
+    # Get all users who should receive event notifications
+    recipients = []
+    
+    # Add all users based on event type or audience
+    # For now, we'll send to all active parents and teachers
+    recipients += User.where(role: %w[parent teacher], status: :active)
+    
+    # Exclude the organizer if they don't want their own event notifications
+    recipients -= [event_record.organizer] if event_record.organizer
+    
+    # Send notification to all recipients
+    NotificationMailer.event_notification(recipients, event_record).deliver_later if recipients.any?
+  end
 
-    # If no recipients specified, notify all parents
-    recipients ||= User.where(role: :parent)
-
+  def self.send_daily_summary
+    # Get all active users who should receive daily summaries
+    recipients = User.where(status: :active, role: %w[parent teacher admin staff])
+    
     recipients.each do |recipient|
-      send_notification(
-        recipient: recipient,
-        title: title,
-        message: message,
-        notification_type: 'event',
-        sender: event.organizer,
-        link: Rails.application.routes.url_helpers.event_path(event)
-      )
-    end
-  end
-
-  def self.send_daily_summary(parent:, date: Date.current)
-    # Find all students associated with this parent
-    students = parent.students_as_parent
-    return if students.empty?
-
-    # Find attendance records for their children today
-    attendance_records = Attendance.joins(:student)
-                                  .where(students: { id: students.ids }, date: date)
-                                  .includes(:student)
-
-    if attendance_records.any?
-      title = "Daily Summary for #{date.strftime('%B %d, %Y')}"
-      message = "Attendance updates for your children:\n"
+      summary_data = {
+        attendance_stats: get_daily_attendance_stats,
+        events_today: get_daily_events,
+        new_notifications: get_new_notifications,
+        fees_due: get_upcoming_fees
+      }
       
-      attendance_records.each do |attendance|
-        message += "- #{attendance.student.first_name}: #{attendance.status.humanize}\n"
-      end
-
-      send_notification(
-        recipient: parent,
-        title: title,
-        message: message,
-        notification_type: 'daily_summary',
-        sender: nil, # System notification
-        link: Rails.application.routes.url_helpers.attendances_path
-      )
+      NotificationMailer.daily_summary_email(recipient, summary_data).deliver_later
     end
   end
 
-  def self.send_new_message_notification(message)
-    # Notify recipient about new message
-    send_notification(
-      recipient: message.recipient,
-      title: "New Message from #{message.sender.name}",
-      message: message.content.truncate(100),
-      notification_type: 'message',
-      sender: message.sender,
-      link: Rails.application.routes.url_helpers.conversation_messages_path(message.conversation)
-    )
+  private
+
+  def self.get_daily_attendance_stats
+    # Calculate attendance statistics for today
+    present_count = Attendance.where(date: Date.current, status: :present).count
+    absent_count = Attendance.where(date: Date.current, status: :absent).count
+    
+    { present: present_count, absent: absent_count }
+  end
+
+  def self.get_daily_events
+    # Get events happening today
+    Event.where(start_time: Date.current.beginning_of_day..Date.current.end_of_day)
+  end
+
+  def self.get_new_notifications
+    # Get notifications created today
+    Notification.where(created_at: Date.current.beginning_of_day..Date.current.end_of_day)
+  end
+
+  def self.get_upcoming_fees
+    # Get fees due within the next week
+    Fee.where(due_date: Date.current..1.week.from_now)
   end
 end
