@@ -1,12 +1,14 @@
-name: "Ruby on Rails CI"
+name: Ruby on Rails CI
+
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: postgres:15
@@ -30,12 +32,14 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+
     env:
       RAILS_ENV: test
       DB_HOST: localhost
       DB_USERNAME: postgres
       DB_PASSWORD: password
       REDIS_URL: redis://localhost:6379/0
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -48,7 +52,7 @@ jobs:
       - name: Install Ruby and gems
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.3'
+          ruby-version: '3.3.10'
           bundler: '2.5.16'
           bundler-cache: true
 
@@ -62,7 +66,7 @@ jobs:
         run: bin/rails test:system
 
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -70,7 +74,7 @@ jobs:
       - name: Install Ruby and gems
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.3'
+          ruby-version: '3.3.10'
           bundler: '2.5.16'
           bundler-cache: true
 
